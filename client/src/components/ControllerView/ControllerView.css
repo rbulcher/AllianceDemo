@@ -1,0 +1,828 @@
+/* ControllerView.css */
+.controller-view {
+  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  color: white;
+  display: flex;
+  flex-direction: row;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.controller-view.connecting,
+.controller-view.no-scenario,
+.controller-view.video-playing {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.connection-message,
+.no-scenario-message,
+.video-status {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 3rem;
+  max-width: 400px;
+}
+
+.spinner,
+.video-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+/* Main content area */
+.controller-main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background: transparent;
+}
+
+.controller-header {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.controller-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.progress {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+/* Step Content Container - New layout for header + description + screenshot */
+.step-content-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  max-width: 100%;
+  max-height: 90vh;
+  background: transparent;
+  overflow: visible;
+}
+
+/* Controller Message Step */
+.controller-message-step.relative-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem;
+  max-width: 1200px;
+  width: 100%;
+  position: relative;
+  min-height: 500px;
+}
+
+.continue-button-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  width: 100%;
+  padding-bottom: 2rem;
+  z-index: 2;
+}
+
+.continue-button {
+  pointer-events: auto;
+}
+
+/* Interaction Step */
+.interaction-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Interaction Layout - Side by side */
+.interaction-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4rem;
+  width: 100%;
+  max-width: 1800px;
+  padding: 0 2rem;
+}
+
+/* Left side - Text */
+.interaction-text {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 66.67%;
+  min-width: 500px;
+  justify-content: center;
+}
+
+.interaction-text .step-header {
+  text-align: center;
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.interaction-text .step-header h2 {
+  font-size: 4rem;
+  margin: 0 0 1.5rem 0;
+  color: #e9511a;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.interaction-text .step-description {
+  font-size: 2.2rem;
+  color: #4a4a4a;
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+  margin: 0;
+  max-width: 600px;
+  font-weight: 600;
+}
+
+/* Right side - Screenshot */
+.interaction-screenshot {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 602px;
+  padding: 0 1rem;
+}
+
+/* Step Header */
+.step-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  max-width: 1000px;
+  width: 100%;
+}
+
+/* Highlighted text styling - "Using Insights," */
+.highlight-text {
+  color: #e9511a;
+  font-weight: 700;
+  font-size: 3.5rem;
+  line-height: 1.2;
+  margin-bottom: 2rem;
+  display: block;
+}
+
+/* Secondary text styling - rest of description */
+.secondary-text {
+  color: #4a4a4a;
+  font-weight: 400;
+  font-size: 2.5rem;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-top: 1rem;
+}
+
+/* Continue Button - Orange theme - Much larger and wider */
+.continue-button {
+  background: #e9511a;
+  color: white;
+  border: none;
+  padding: 1.5rem 6rem;
+  border-radius: 50px;
+  font-size: 1.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(233, 81, 26, 0.3);
+  margin-top: 3rem;
+  min-width: 350px;
+  /* Default state: always start hidden */
+  transform: translateY(30px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  pointer-events: none;
+}
+
+.continue-button.show {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.continue-button.hide {
+  transform: translateY(30px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.continue-button:hover {
+  background: #d1440e;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(233, 81, 26, 0.4);
+}
+
+.step-content {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.screen-asset {
+  position: relative;
+  width: 100%;
+  max-width: 2000px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  margin-top: 1rem;
+}
+
+.screen-asset img {
+  max-width: 1400px;
+  max-height: 2400px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0px;
+  box-shadow: none;
+  background: transparent;
+}
+
+.interactions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background: transparent;
+}
+
+.interaction-button {
+  position: absolute;
+  background: rgba(0, 122, 255, 0.1);
+  border: 2px solid rgba(0, 122, 255, 0.8);
+  color: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  animation: pulse 2s infinite;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+  z-index: 10;
+  /* Ensure minimum touch target size for mobile */
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.interaction-button:hover {
+  background: rgba(0, 122, 255, 0.2);
+  border-color: rgba(0, 122, 255, 1);
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+.interaction-button:active {
+  transform: scale(0.98);
+}
+
+/* Button feedback effect */
+.interaction-button.tapped {
+  background: rgba(0, 122, 255, 0.3);
+  border-color: rgba(0, 122, 255, 1);
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 0.6;
+    border-color: rgba(0, 122, 255, 0.6);
+  }
+  50% { 
+    opacity: 1;
+    border-color: rgba(0, 122, 255, 1);
+  }
+}
+
+/* Clean assistance zone styles */
+.assistance-zone-hidden {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.assistance-zone-visible {
+  background-color: transparent;
+}
+
+/* Box indicator style (existing) */
+.assistance-zone-visible.box-indicator {
+  animation: orangeBlink 1.5s ease-in-out infinite;
+}
+
+/* Circle indicator style (new) */
+.assistance-zone-visible.circle-indicator {
+  position: relative;
+  animation: circleRadiate 2.5s ease-out infinite;
+  /* Ensure no background/border shows on the main element */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+
+.assistance-zone-visible.circle-indicator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 2px solid #F04923;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: circleRipple 2.5s ease-out infinite;
+  animation-delay: 0.5s;
+}
+
+.assistance-zone-visible.circle-indicator::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 2px solid #F04923;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: circleRipple 2.5s ease-out infinite;
+  animation-delay: 0s;
+}
+
+@keyframes orangeBlink {
+  0%, 100% { 
+    border: 3px solid transparent;
+    box-shadow: none;
+  }
+  50% { 
+    border: 3px solid #F04923;
+    box-shadow: 0 0 58.6px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@keyframes circleRadiate {
+  0% { 
+    opacity: 1;
+  }
+  100% { 
+    opacity: 1;
+  }
+}
+
+@keyframes circleRipple {
+  0% { 
+    width: 40px;
+    height: 40px;
+    opacity: 1;
+  }
+  40% { 
+    width: 120px;
+    height: 120px;
+    opacity: 0;
+  }
+  41%, 100% { 
+    width: 40px;
+    height: 40px;
+    opacity: 0;
+  }
+}
+
+
+.loading-step {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  background: transparent;
+  color: white;
+}
+
+.controller-footer {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.back-button,
+.instructions-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.back-button:hover,
+.instructions-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Scenario Selector Styles in Controller View */
+.controller-view.scenario-selector {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.controller-view.scenario-selector .header {
+  text-align: center;
+  margin-bottom: 3rem;
+  width: 100%;
+  max-width: 800px;
+  position: relative;
+}
+
+.controller-view.scenario-selector .header h1 {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  color: #e9511a;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+}
+
+.controller-view.scenario-selector .connection-status {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #666666;
+}
+
+.controller-view.scenario-selector .connected {
+  color: #4CAF50;
+}
+
+.controller-view.scenario-selector .disconnected {
+  color: #f44336;
+}
+
+.controller-view.scenario-selector .scenarios-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 1rem;
+}
+
+.controller-view.scenario-selector .scenario-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 3rem 2.5rem 1.5rem 2.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid rgba(200, 200, 200, 0.3);
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  flex: 0 0 320px;
+  min-width: 320px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.controller-view.scenario-selector .scenario-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(200, 200, 200, 0.5);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.controller-view.scenario-selector .scenario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.controller-view.scenario-selector .scenario-header h3 {
+  font-size: 2rem;
+  margin: 0 0 1rem 0;
+  color: #333333cc;
+  font-weight: 700;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.controller-view.scenario-selector .scenario-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.controller-view.scenario-selector .scenario-description {
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  opacity: 1;
+  font-size: 1.1rem;
+  color: #666666;
+  font-weight: 500;
+}
+
+.controller-view.scenario-selector .start-button {
+  background: #e9511a;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(233, 81, 26, 0.3);
+  font-family: 'Montserrat', sans-serif;
+  margin-top: auto;
+}
+
+.controller-view.scenario-selector .start-button:hover {
+  background: #d1440e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(233, 81, 26, 0.4);
+}
+
+/* Completed scenario styles */
+.controller-view.scenario-selector .scenario-card.completed {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.controller-view.scenario-selector .scenario-card.completed:hover {
+  transform: none;
+  box-shadow: 0 8px 32px rgba(233, 81, 26, 0.1);
+}
+
+.controller-view.scenario-selector .start-button.completed {
+  background: #888888;
+  color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.controller-view.scenario-selector .start-button.completed:hover {
+  background: #888888;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Reset Menu Button */
+.reset-menu-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+  z-index: 1000;
+}
+
+.reset-menu-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Hidden admin button */
+.admin-secret-button {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 1000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.admin-secret-button.feedback {
+  background: rgba(255, 255, 255, 0.1);
+  animation: adminFeedback 1s ease-out forwards;
+}
+
+.admin-secret-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-secret-button:active {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(-50%) scale(0.95);
+}
+
+@keyframes adminFeedback {
+  0% {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-50%) scale(1.1);
+  }
+  100% {
+    background: transparent;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+/* Invisible admin reset button in bottom right */
+.admin-reset-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  z-index: 1000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.admin-reset-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-reset-button:active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.95);
+}
+
+/* Responsive styles for iPad and smaller screens */
+@media screen and (max-width: 1400px) {
+  /* Scenario selector responsive adjustments */
+  .controller-view.scenario-selector .header h1 {
+    font-size: 3.5rem;
+  }
+  
+  .controller-view.scenario-selector .scenarios-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .controller-view.scenario-selector .scenario-card {
+    padding: 3.5rem 2.5rem 1.5rem 2.5rem;
+    flex: 0 0 360px;
+    min-width: 360px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    border: 2px solid rgba(200, 200, 200, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  
+  .controller-view.scenario-selector .scenario-header h3 {
+    font-size: 1.8rem;
+  }
+  
+  /* Main content area adjustments */
+  .controller-main {
+    width: 100%;
+    padding: 1rem;
+  }
+  
+  .controller-header {
+    top: 1rem;
+    right: 1rem;
+  }
+  
+  .controller-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .progress {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  /* Screen asset scaling */
+  .screen-asset {
+    max-width: 90vw;
+  }
+  
+  .screen-asset img {
+    max-width: 600px;
+    max-height: 1000px;
+  }
+  
+  .controller-footer {
+    bottom: 1rem;
+    right: 1rem;
+  }
+  
+  .back-button {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  /* Further scaling for smaller tablets/phones */
+  .controller-view.scenario-selector .header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .controller-view.scenario-selector .scenarios-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .controller-main {
+    width: 100%;
+    padding: 0.5rem;
+  }
+  
+  .screen-asset img {
+    max-width: 450px;
+    max-height: 750px;
+  }
+}

@@ -1,0 +1,43 @@
+{
+	"short_name": "Alliance Demo",
+	"name": "Alliance Commercial Laundry Interactive Demo",
+	"description": "Interactive tradeshow demo for Alliance Commercial Laundry solutions",
+	"icons": [
+		{
+			"src": "alliance-icon-192.png",
+			"type": "image/png",
+			"sizes": "192x192",
+			"purpose": "any maskable"
+		},
+		{
+			"src": "alliance-icon-512.png",
+			"type": "image/png",
+			"sizes": "512x512",
+			"purpose": "any maskable"
+		}
+	],
+	"start_url": "/",
+	"display": "standalone",
+	"orientation": "portrait",
+	"theme_color": "#667eea",
+	"background_color": "#667eea",
+	"scope": "/",
+	"categories": ["business", "productivity"],
+	"prefer_related_applications": false,
+	"screenshots": [
+		{
+			"src": "screenshot-controller.png",
+			"sizes": "390x844",
+			"type": "image/png",
+			"form_factor": "narrow",
+			"label": "Controller interface for iPad"
+		},
+		{
+			"src": "screenshot-display.png",
+			"sizes": "1920x1080",
+			"type": "image/png",
+			"form_factor": "wide",
+			"label": "Display interface for TV/laptop"
+		}
+	]
+}

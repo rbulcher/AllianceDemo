@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, user-scalable=no"
+		/>
+		<meta name="theme-color" content="#667eea" />
+		<meta
+			name="description"
+			content="Alliance Commercial Laundry Interactive Demo System"
+		/>
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta
+			name="apple-mobile-web-app-status-bar-style"
+			content="black-translucent"
+		/>
+		<meta name="apple-mobile-web-app-title" content="Alliance Demo" />
+
+		<link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+		<title>Alliance Commercial Laundry Demo</title>
+
+		<!-- Preconnect to improve performance -->
+		<link rel="preconnect" href="http://192.168.86.31:5000" />
+
+		<!-- Prevent zoom on iOS - Enhanced for PWA -->
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+		/>
+
+		<!-- Favicon will be added when we have Alliance branding -->
+
+		<style>
+			/* Loading screen styles */
+			.loading-screen {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				color: white;
+				z-index: 9999;
+				transition: opacity 0.5s ease-out;
+			}
+
+			.loading-screen.hidden {
+				opacity: 0;
+				pointer-events: none;
+			}
+
+			.loading-spinner {
+				width: 50px;
+				height: 50px;
+				border: 4px solid rgba(255, 255, 255, 0.3);
+				border-top: 4px solid white;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin-bottom: 1rem;
+			}
+
+			@keyframes spin {
+				from {
+					transform: rotate(0deg);
+				}
+				to {
+					transform: rotate(360deg);
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<noscript>
+			<div
+				style="
+					padding: 2rem;
+					text-align: center;
+					background: #f5f5f5;
+					min-height: 100vh;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				"
+			>
+				<div>
+					<h1>Alliance Commercial Laundry Demo</h1>
+					<p>You need to enable JavaScript to run this interactive demo.</p>
+				</div>
+			</div>
+		</noscript>
+
+		<div id="loading-screen" class="loading-screen">
+			<div class="loading-spinner"></div>
+			<h2>Alliance Commercial Laundry</h2>
+			<p>Loading interactive demo...</p>
+		</div>
+
+		<div id="root"></div>
+
+		<script>
+			// Hide loading screen when React app loads
+			window.addEventListener("load", function () {
+				setTimeout(function () {
+					const loadingScreen = document.getElementById("loading-screen");
+					if (loadingScreen) {
+						loadingScreen.classList.add("hidden");
+						setTimeout(() => loadingScreen.remove(), 500);
+					}
+				}, 500);
+			});
+
+			// iPad PWA Optimizations - Prevent zoom and scrolling
+			document.addEventListener('touchstart', function(event) {
+				if (event.touches.length > 1) {
+					event.preventDefault(); // Prevent pinch-to-zoom
+				}
+			}, { passive: false });
+
+			// Prevent double-tap zoom
+			let lastTouchEnd = 0;
+			document.addEventListener('touchend', function(event) {
+				const now = new Date().getTime();
+				if (now - lastTouchEnd <= 300) {
+					event.preventDefault();
+				}
+				lastTouchEnd = now;
+			}, false);
+
+			// Prevent pull-to-refresh on iOS
+			document.addEventListener('touchmove', function(event) {
+				if (event.scale !== 1) {
+					event.preventDefault();
+				}
+			}, { passive: false });
+		</script>
+	</body>
+</html>

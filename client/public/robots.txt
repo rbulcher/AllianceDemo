@@ -1,0 +1,4 @@
+# Alliance Commercial Laundry Demo
+# This is a private demo application for tradeshow use only
+User-agent: *
+Disallow: /

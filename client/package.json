@@ -1,0 +1,39 @@
+{
+	"name": "alliance-demo-client",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Alliance Commercial Laundry Interactive Demo - Client",
+	"homepage": ".",
+	"dependencies": {
+		"framer-motion": "^12.23.3",
+		"react": "^19.1.0",
+		"react-device-mockups": "^0.1.12",
+		"react-dom": "^19.1.0",
+		"react-router-dom": "^7.6.3",
+		"react-scripts": "5.0.1",
+		"socket.io-client": "^4.8.1"
+	},
+	"scripts": {
+		"start": "react-scripts start",
+		"build": "react-scripts build",
+		"serve": "npx serve -s build -l 3000"
+	},
+	"eslintConfig": {
+		"extends": [
+			"react-app"
+		]
+	},
+	"browserslist": {
+		"production": [
+			">0.2%",
+			"not dead",
+			"not op_mini all",
+			"not ie <= 11"
+		],
+		"development": [
+			"last 1 chrome version",
+			"last 1 firefox version",
+			"last 1 safari version"
+		]
+	}
+}

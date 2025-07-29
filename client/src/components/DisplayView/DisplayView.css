@@ -1,0 +1,699 @@
+/* DisplayView.css */
+.display-view {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.display-view.connecting,
+.display-view.standby {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.connection-message,
+.standby-screen {
+  max-width: 800px;
+  padding: 3rem;
+}
+
+.connection-message h1,
+.alliance-logo h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.alliance-logo {
+  margin-bottom: 3rem;
+}
+
+.alliance-logo p {
+  font-size: 1.5rem;
+  opacity: 0.8;
+}
+
+.standby-message h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #3498db;
+}
+
+.standby-message p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+.display-header {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.829) 0%, transparent 100%);
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.display-header h1 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.progress-bar {
+  background: rgba(255, 255, 255, 0.2);
+  height: 8px;
+  border-radius: 4px;
+  width: 300px;
+  overflow: hidden;
+  margin: 0 2rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d6420d 0%, #cc580a 100%);
+  /* #e9511a (orange), #ffb347 (light orange/yellow) */
+  transition: width 0.5s ease;
+}
+
+.step-info {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.display-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  height: 80vh;
+  background: #000;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.demo-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  font-weight: 600;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+.end-frame-overlay {
+  background: rgba(0, 0, 0, 0.1);
+  flex-direction: column;
+}
+
+.step-display {
+  display: flex;
+  width: 100%;
+  max-width: 1400px;
+  height: 80vh;
+  justify-content: center;
+  align-items: center;
+}
+
+.tv-content {
+  text-align: center;
+  max-width: 1200px;
+  padding: 3rem;
+  width: 100%;
+}
+
+.current-step-info {
+  margin-bottom: 3rem;
+}
+
+.current-step-info h2 {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  color: #e9511a;
+  font-weight: 700;
+  text-shadow: none;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.current-step-info p {
+  font-size: 2.5rem;
+  color: #4a4a4a;
+  font-weight: 600;
+  opacity: 1;
+  line-height: 1.4;
+}
+
+.interaction-prompt {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.interaction-prompt p {
+  font-size: 1.2rem;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.interaction-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pulse-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #C84A1D;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.completion-message {
+  text-align: center;
+  padding: 2rem;
+}
+
+.completion-message h3 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #2ecc71;
+}
+
+.completion-message p {
+  font-size: 1.3rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.completion-stats {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin-top: 2rem;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 1rem;
+  opacity: 0.7;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  display: block;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.step-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-end;
+  padding: 2rem;
+  position: relative;
+  width: 100%;
+}
+
+.phone-mockup {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  max-width: 100%;
+  max-height: 100%;
+  padding-right: 0;
+  margin-right: 3rem;
+}
+
+
+/* Interactive Button Overlay System */
+.phone-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.phone-overlay.active {
+  pointer-events: all;
+}
+
+/* Core button styles for overlay buttons */
+.overlay-button {
+  position: absolute;
+  background: rgba(200, 74, 29, 0.2);
+  border: 2px solid #C84A1D;
+  color: #C84A1D;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.3s ease;
+  animation: pulse-glow 2s infinite;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(200, 74, 29, 0.3);
+  z-index: 20;
+  /* Ensure minimum touch target size */
+  min-width: 44px;
+  min-height: 44px;
+  /* Hide initially until positioned - with small delay to prevent flash */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s ease 0.05s, visibility 0.1s ease 0.05s;
+}
+
+/* Default button styling for manual positioning */
+.overlay-button.default-button {
+  /* All positioning and sizing comes from inline styles from scenarios.js */
+  z-index: 20;
+}
+
+/* Show button once positioned or when it has inline styles */
+.overlay-button.positioned,
+.overlay-button[style*="left"],
+.overlay-button[style*="top"] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.1s ease, visibility 0.1s ease;
+}
+
+.overlay-button:hover {
+  background: rgba(200, 74, 29, 0.5);
+  transform: scale(1.05);
+}
+
+.overlay-button.clicked {
+  background: rgba(46, 204, 113, 0.5);
+  border-color: #2ecc71;
+  animation: none;
+}
+
+/* Width Classes */
+.overlay-button.full-width {
+  width: calc(100% - 120px); /* Account for phone bezels */
+  left: 60px;
+}
+
+.overlay-button.half-width {
+  width: calc(50% - 80px);
+}
+
+.overlay-button.quarter-width {
+  width: calc(25% - 60px);
+}
+
+/* Horizontal Position Classes */
+.overlay-button.left {
+  left: 60px;
+}
+
+.overlay-button.center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.overlay-button.right {
+  right: 60px;
+}
+
+.overlay-button.half-left {
+  left: 60px;
+}
+
+.overlay-button.half-right {
+  right: 60px;
+}
+
+.overlay-button.half-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.overlay-button.quarter-far-left {
+  left: 60px;
+}
+
+.overlay-button.quarter-left-center {
+  left: calc(25% + 30px);
+}
+
+.overlay-button.quarter-right-center {
+  right: calc(25% + 30px);
+}
+
+.overlay-button.quarter-far-right {
+  right: 60px;
+}
+
+/* Vertical Position Classes - Based on phone screen sections */
+.overlay-button.top {
+  top: 15%;
+}
+
+.overlay-button.upper-mid {
+  top: 25%;
+}
+
+.overlay-button.mid {
+  top: 40%;
+}
+
+.overlay-button.lower-mid {
+  top: 55%;
+}
+
+.overlay-button.bottom {
+  bottom: 15%;
+}
+
+.overlay-button.very-bottom {
+  bottom: 8%;
+}
+
+/* Height Classes */
+.overlay-button.small-height {
+  height: 40px;
+}
+
+.overlay-button.medium-height {
+  height: 60px;
+}
+
+.overlay-button.large-height {
+  height: 80px;
+}
+
+/* Specific button for the machines example */
+.overlay-button.machines-button {
+  /* Quarter width, far right, bottom position */
+  width: calc(25% - 60px);
+  right: 60px;
+  bottom: 15%;
+  height: 50px;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(200, 74, 29, 0.6);
+    opacity: 0.8;
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(200, 74, 29, 0.9);
+    opacity: 1;
+  }
+}
+
+/* TV Content Styles - Clean display for TV screen */
+.tv-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  max-width: 800px;
+  padding: 3rem;
+}
+
+.current-step-info {
+  margin-bottom: 3rem;
+}
+
+.current-step-info h2 {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  color: #e9511a;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+.current-step-info p {
+  font-size: 2.5rem;
+  color: #4a4a4a;
+  font-weight: 600;
+  opacity: 1;
+  line-height: 1.4;
+}
+
+.interaction-prompt {
+  margin-top: 2rem;
+}
+
+.interaction-prompt p {
+  font-size: 1.3rem;
+  margin-bottom: 2rem;
+  opacity: 0.8;
+}
+
+.interaction-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pulse-circle {
+  width: 60px;
+  height: 60px;
+  background: rgba(200, 74, 29, 0.3);
+  border: 3px solid #C84A1D;
+  border-radius: 50%;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.completion-message {
+  text-align: center;
+  padding: 2rem;
+}
+
+.completion-message h3 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #2ecc71;
+}
+
+.completion-message p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.completion-stats {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin-top: 2rem;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  display: block;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.display-footer {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem 2rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.connection-status {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive design for different screen sizes */
+@media (max-width: 768px) {
+  .display-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    margin: 1rem 0;
+  }
+  
+  .step-display {
+    flex-direction: column;
+    height: auto;
+    gap: 1rem;
+  }
+  
+  .step-content {
+    padding: 1rem;
+    align-items: center;
+  }
+  
+  .phone-mockup {
+    margin-right: 0;
+  }
+  
+  
+  /* Mobile instruction text adjustments */
+  .tv-content {
+    max-width: 100%;
+    padding: 1rem;
+  }
+  
+  .current-step-info h2 {
+    font-size: 2rem;
+    white-space: normal;
+    line-height: 1.2;
+  }
+  
+  /* Mobile Button Adjustments */
+  .overlay-button {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  
+  .overlay-button.full-width {
+    width: calc(100% - 40px);
+    left: 20px;
+  }
+  
+  .overlay-button.half-width {
+    width: calc(50% - 30px);
+  }
+  
+  .overlay-button.quarter-width {
+    width: calc(25% - 20px);
+  }
+  
+  .overlay-button.left,
+  .overlay-button.half-left,
+  .overlay-button.quarter-far-left {
+    left: 20px;
+  }
+  
+  .overlay-button.right,
+  .overlay-button.half-right,
+  .overlay-button.quarter-far-right {
+    right: 20px;
+  }
+  
+  .overlay-button.quarter-left-center {
+    left: calc(25% + 10px);
+  }
+  
+  .overlay-button.quarter-right-center {
+    right: calc(25% + 10px);
+  }
+  
+  .overlay-button.small-height {
+    height: 30px;
+  }
+  
+  .overlay-button.medium-height {
+    height: 40px;
+  }
+  
+  .overlay-button.large-height {
+    height: 50px;
+  }
+  
+  .completion-stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}

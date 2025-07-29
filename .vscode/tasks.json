@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "Start Alliance Demo",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "type": "shell",
+      "label": "Start Server Only",
+      "command": "npm",
+      "args": ["run", "server"],
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "type": "shell",
+      "label": "Start Client Only",
+      "command": "npm",
+      "args": ["run", "client"],
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "type": "shell",
+      "label": "Install All Dependencies",
+      "command": "npm",
+      "args": ["run", "install-all"],
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}
