@@ -200,8 +200,8 @@ export const scenarios = {
 			{
 				id: "step10",
 				type: "controller-message",
-				title: "Great Work! Now, ",
-				description: "continue the experience on the TV",
+				title: "Great Work!",
+				description: " Now, continue the experience on the TV",
 				videoAsset: createVideoAsset(VIDEO_KEYS.SCENARIO1_VIDEO2),
 				endFrameAsset: "/assets/videos/scenario1/endFrame2.png",
 				autoAdvanceOnVideoEnd: true,

@@ -63,13 +63,18 @@ const ControllerView = () => {
 
 					// For controller-message steps, show continue button behavior
 					if (step.type === "controller-message") {
-						// Always start hidden, then animate in
-						if (showContinueButton) {
-							console.log("🔴 HIDING continue button for new step");
+						// Only hide button if this is actually a new step, not just a video-end update
+						if (step.id !== currentStep?.id) {
+							// This is truly a new step - hide button and reset
+							if (showContinueButton) {
+								console.log("🔴 HIDING continue button for new step");
+							}
+							setShowContinueButton(false);
+							continueButtonTriggeredRef.current = false;
+						} else {
+							// Same step, might be video-end update - preserve button state
+							console.log("📹 Same step update - preserving continue button state");
 						}
-						setShowContinueButton(false);
-						// Ensure the ref is also reset to prevent any timing issues  
-						continueButtonTriggeredRef.current = false;
 						// Don't reset videoHasStartedRef here - let it persist for video end detection
 					} else {
 						// Reset continue button for non-controller-message steps
