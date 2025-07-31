@@ -7,6 +7,9 @@ import audioFeedback from "../../utils/audioFeedback";
 import "./ControllerView.css";
 
 const ControllerView = () => {
+	// 🎯 DEBUG TOOL TOGGLE - Set to true to enable coordinate debugging
+	const ENABLE_DEBUG_TOOL = false;
+	
 	const { demoState, nextStep, startScenario, adminReset, isConnected, playVideo } =
 		useSocket("controller");
 
@@ -22,6 +25,12 @@ const ControllerView = () => {
 	const [showNonVideoButton, setShowNonVideoButton] = useState(false);
 	const [completedScenarios, setCompletedScenarios] = useState(new Set());
 	const [videoManuallyStarted, setVideoManuallyStarted] = useState(false);
+	const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
+	const [showMouseCoords, setShowMouseCoords] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
+	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+	const [dragEnd, setDragEnd] = useState({ x: 0, y: 0 });
+	const [selectionRect, setSelectionRect] = useState(null);
 	const pulseTimerRef = useRef(null);
 	const phoneScreenRef = useRef(null);
 	const continueButtonTriggeredRef = useRef(false);
@@ -53,6 +62,8 @@ const ControllerView = () => {
 					setCurrentStep(step);
 					// Show zones permanently for image mapper steps
 					setShowZones(step.useImageMapper || false);
+					// Show mouse coordinates for image mapper steps (only if debug tool is enabled)
+					setShowMouseCoords((step.useImageMapper || false) && ENABLE_DEBUG_TOOL);
 					// Reset continue button trigger flag for new step
 					continueButtonTriggeredRef.current = false;
 					// Only reset video started flag if we're actually changing steps
@@ -60,7 +71,10 @@ const ControllerView = () => {
 						console.log("🆕 NEW STEP - Resetting video flag for:", step.id);
 						videoHasStartedRef.current = false;
 						setVideoManuallyStarted(false); // Reset manual video start flag
-						setImageLoaded(false); // Reset image loaded state for new step
+						// Only reset imageLoaded for steps that actually have images
+						if (step.screenAsset) {
+							setImageLoaded(false); // Reset image loaded state for new step
+						}
 					}
 
 					// For controller-message steps, manage button states
@@ -217,6 +231,74 @@ const ControllerView = () => {
 	useEffect(() => {
 		console.log("showZones changed to:", showZones);
 	}, [showZones]);
+
+	// Mouse coordinate tracking for debugging image mapper positions
+	const handleMouseMove = (e) => {
+		if (!showMouseCoords) return;
+		
+		// Get the image element
+		const img = e.currentTarget.querySelector('img');
+		if (!img) return;
+		
+		// Get the bounding rect of the image
+		const rect = img.getBoundingClientRect();
+		
+		// Calculate coordinates relative to the image
+		const x = Math.round(e.clientX - rect.left);
+		const y = Math.round(e.clientY - rect.top);
+		
+		setMouseCoords({ x, y });
+		
+		// Update drag end position if dragging
+		if (isDragging) {
+			setDragEnd({ x, y });
+			
+			// Calculate selection rectangle
+			const startX = Math.min(dragStart.x, x);
+			const startY = Math.min(dragStart.y, y);
+			const width = Math.abs(x - dragStart.x);
+			const height = Math.abs(y - dragStart.y);
+			
+			setSelectionRect({
+				x: startX,
+				y: startY,
+				width,
+				height
+			});
+		}
+	};
+
+	const handleMouseDown = (e) => {
+		if (!showMouseCoords) return;
+		
+		// Get the image element
+		const img = e.currentTarget.querySelector('img');
+		if (!img) return;
+		
+		// Get the bounding rect of the image
+		const rect = img.getBoundingClientRect();
+		
+		// Calculate coordinates relative to the image
+		const x = Math.round(e.clientX - rect.left);
+		const y = Math.round(e.clientY - rect.top);
+		
+		setIsDragging(true);
+		setDragStart({ x, y });
+		setDragEnd({ x, y });
+		setSelectionRect(null);
+		
+		// Prevent default to avoid text selection
+		e.preventDefault();
+	};
+
+	const handleMouseUp = (e) => {
+		if (!showMouseCoords || !isDragging) return;
+		
+		setIsDragging(false);
+		
+		// Final selection rectangle is already set in handleMouseMove
+		console.log('🎯 Selection Rectangle:', selectionRect);
+	};
 
 	const handleInteraction = async (interaction, e) => {
 		if (!currentStep || !currentScenario) return;
@@ -555,6 +637,29 @@ const ControllerView = () => {
 				backgroundRepeat: "no-repeat",
 			}}
 		>
+			{/* Mouse Coordinate Debug Display */}
+			{showMouseCoords && (
+				<div className="mouse-coords-debug">
+					<div className="coords-display">
+						Mouse: X: {mouseCoords.x}, Y: {mouseCoords.y}
+					</div>
+					{selectionRect && (
+						<div className="selection-display">
+							<div className="selection-title">🎯 Selection Rectangle:</div>
+							<div className="selection-data">
+								position: {`{ x: ${selectionRect.x}, y: ${selectionRect.y} }`}
+							</div>
+							<div className="selection-data">
+								size: {`{ width: ${selectionRect.width}, height: ${selectionRect.height} }`}
+							</div>
+						</div>
+					)}
+					<div className="coords-help">
+						{isDragging ? 'Drag to select area...' : 'Click and drag to select interaction area'}
+					</div>
+				</div>
+			)}
+
 			{/* Main Content */}
 			<div className="controller-main">
 				<div className="controller-header">
@@ -652,20 +757,111 @@ const ControllerView = () => {
 
 							{/* Interaction Step with Screenshot */}
 							{currentStep.type === "interaction" && (
-								<div className="interaction-step">
-									<div className="interaction-layout">
-										{/* Left side - Title and Description */}
-										<div className="interaction-text">
-											<div className="step-header">
-												<h2>{currentStep.title}</h2>
-												<p className="step-description">
-													{currentStep.description}
-												</p>
+								<div className={`interaction-step ${currentStep.layoutType === 'laptop' ? 'laptop-layout' : ''}`}>
+									{currentStep.layoutType === 'laptop' ? (
+										// New laptop layout: title/description on top, image below
+										<div className="laptop-interaction-layout">
+											{/* Top section - Title and Description centered */}
+											<div className="laptop-interaction-header">
+												<div className="step-header">
+													<h2>{currentStep.title}</h2>
+													<p className="step-description">
+														{currentStep.description}
+													</p>
+												</div>
+											</div>
+
+											{/* Bottom section - Full width screenshot */}
+											<div className="laptop-interaction-screenshot">
+												{currentStep.screenAsset && (
+													<div className="screen-asset">
+														<div
+															style={{
+																position: "relative",
+																display: "inline-block",
+																width: "100%",
+															}}
+															onMouseMove={handleMouseMove}
+															onMouseDown={handleMouseDown}
+															onMouseUp={handleMouseUp}
+														>
+															<img
+																src={currentStep.screenAsset}
+																alt={currentStep.title}
+																onLoad={() => setImageLoaded(true)}
+																onError={(e) => {
+																	e.target.style.display = "none";
+																	setImageLoaded(true);
+																}}
+																style={{
+																	display: "block",
+																	width: "100%",
+																	height: "auto",
+																	objectFit: "contain",
+																}}
+															/>
+															{currentStep.useImageMapper &&
+																currentStep.interactions?.map((interaction) => (
+																	<div
+																		key={interaction.id}
+																		data-interaction-zone="true"
+																		onClick={(e) =>
+																			handleInteraction(interaction, e)
+																		}
+																		className={
+																			showZones
+																				? `assistance-zone-visible ${interaction.indicatorType || 'box'}-indicator`
+																				: "assistance-zone-hidden"
+																		}
+																		style={{
+																			position: "absolute",
+																			left: `${interaction.position.x}px`,
+																			top: `${interaction.position.y}px`,
+																			width: `${interaction.size.width}px`,
+																			height: `${interaction.size.height}px`,
+																			borderRadius: interaction.indicatorType === 'circle' ? '50%' : '8px',
+																			cursor: "pointer",
+																			zIndex: 10,
+																		}}
+																	/>
+																))}
+															
+															{/* Selection rectangle overlay */}
+															{isDragging && selectionRect && (
+																<div
+																	style={{
+																		position: "absolute",
+																		left: `${selectionRect.x}px`,
+																		top: `${selectionRect.y}px`,
+																		width: `${selectionRect.width}px`,
+																		height: `${selectionRect.height}px`,
+																		border: "2px dashed #00ff00",
+																		backgroundColor: "rgba(0, 255, 0, 0.1)",
+																		pointerEvents: "none",
+																		zIndex: 1000,
+																	}}
+																/>
+															)}
+														</div>
+													</div>
+												)}
 											</div>
 										</div>
+									) : (
+										// Original phone layout: text left, image right
+										<div className="interaction-layout">
+											{/* Left side - Title and Description */}
+											<div className="interaction-text">
+												<div className="step-header">
+													<h2>{currentStep.title}</h2>
+													<p className="step-description">
+														{currentStep.description}
+													</p>
+												</div>
+											</div>
 
-										{/* Right side - Screenshot */}
-										<div className="interaction-screenshot">
+											{/* Right side - Screenshot */}
+											<div className="interaction-screenshot">
 											{currentStep.screenAsset && (
 												<div className="screen-asset">
 													<div
@@ -673,6 +869,9 @@ const ControllerView = () => {
 															position: "relative",
 															display: "inline-block",
 														}}
+														onMouseMove={handleMouseMove}
+														onMouseDown={handleMouseDown}
+														onMouseUp={handleMouseUp}
 													>
 														<img
 															src={currentStep.screenAsset}
@@ -697,7 +896,7 @@ const ControllerView = () => {
 																		handleInteraction(interaction, e)
 																	}
 																	className={
-																		showZones && imageLoaded
+																		showZones
 																			? `assistance-zone-visible ${interaction.indicatorType || 'box'}-indicator`
 																			: "assistance-zone-hidden"
 																	}
@@ -721,6 +920,23 @@ const ControllerView = () => {
 																	}}
 																/>
 															))}
+
+															{/* Selection rectangle overlay */}
+															{isDragging && selectionRect && (
+																<div
+																	style={{
+																		position: "absolute",
+																		left: `${selectionRect.x}px`,
+																		top: `${selectionRect.y}px`,
+																		width: `${selectionRect.width}px`,
+																		height: `${selectionRect.height}px`,
+																		border: "2px dashed #00ff00",
+																		backgroundColor: "rgba(0, 255, 0, 0.1)",
+																		pointerEvents: "none",
+																		zIndex: 1000,
+																	}}
+																/>
+															)}
 													</div>
 												</div>
 											)}
@@ -747,6 +963,7 @@ const ControllerView = () => {
 											)}
 										</div>
 									</div>
+									)}
 								</div>
 							)}
 						</div>
