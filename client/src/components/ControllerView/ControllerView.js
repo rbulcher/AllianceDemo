@@ -17,7 +17,9 @@ const ControllerView = () => {
 	const [buttonFeedback, setButtonFeedback] = useState({});
 	const [showZones, setShowZones] = useState(true);
 	const [imageLoaded, setImageLoaded] = useState(false);
-	const [showContinueButton, setShowContinueButton] = useState(false);
+	const [showPreVideoButton, setShowPreVideoButton] = useState(false);
+	const [showPostVideoButton, setShowPostVideoButton] = useState(false);
+	const [showNonVideoButton, setShowNonVideoButton] = useState(false);
 	const [completedScenarios, setCompletedScenarios] = useState(new Set());
 	const [videoManuallyStarted, setVideoManuallyStarted] = useState(false);
 	const pulseTimerRef = useRef(null);
@@ -61,24 +63,28 @@ const ControllerView = () => {
 						setImageLoaded(false); // Reset image loaded state for new step
 					}
 
-					// For controller-message steps, show continue button behavior
+					// For controller-message steps, manage button states
 					if (step.type === "controller-message") {
-						// Only hide button if this is actually a new step, not just a video-end update
+						// Only reset buttons if this is actually a new step, not just a video-end update
 						if (step.id !== currentStep?.id) {
-							// This is truly a new step - hide button and reset
-							if (showContinueButton) {
-								console.log("🔴 HIDING continue button for new step");
-							}
-							setShowContinueButton(false);
+							// This is truly a new step - hide all buttons and reset
+							console.log("🔴 HIDING all continue buttons for new step transition");
+							setShowPreVideoButton(false);
+							setShowPostVideoButton(false);
+							setShowNonVideoButton(false);
 							continueButtonTriggeredRef.current = false;
 						} else {
-							// Same step, might be video-end update - preserve button state
-							console.log("📹 Same step update - preserving continue button state");
+							// Same step, might be video-end update - preserve button states
+							console.log("📹 Same step update - preserving continue button states");
 						}
 						// Don't reset videoHasStartedRef here - let it persist for video end detection
 					} else {
-						// Reset continue button for non-controller-message steps
-						setShowContinueButton(false);
+						// Reset all buttons for non-controller-message steps
+						console.log("🔄 Resetting all continue buttons for non-controller-message step");
+						setShowPreVideoButton(false);
+						setShowPostVideoButton(false);
+						setShowNonVideoButton(false);
+						continueButtonTriggeredRef.current = false;
 					}
 				}
 			}
@@ -94,31 +100,18 @@ const ControllerView = () => {
 		// Don't reset the flag when video stops - we need it for continue button logic
 	}, [demoState.isVideoPlaying, currentStep]);
 
-	// Listen for video status changes to show continue button
+	// Show POST-VIDEO Continue button after video ends
 	useEffect(() => {
 		const isVideoActuallyEnded = !demoState.isVideoPlaying && currentStep?.videoAsset && videoHasStartedRef.current && videoManuallyStarted;
 		
-		console.log("🔍 Continue button logic check:", {
-			hasCurrentStep: !!currentStep,
-			stepType: currentStep?.type,
-			hasVideoAsset: !!currentStep?.videoAsset,
-			isVideoPlaying: demoState.isVideoPlaying,
-			hasScenario: !!demoState.currentScenario,
-			showContinueButton,
-			videoHasStarted: videoHasStartedRef.current,
-			videoManuallyStarted,
+		console.log("🔍 POST-VIDEO Continue button logic:", {
 			stepId: currentStep?.id,
 			isVideoActuallyEnded,
-			continueButtonTriggered: continueButtonTriggeredRef.current,
-			// Individual condition checks
-			condition1_hasCurrentStep: !!currentStep,
-			condition2_isControllerMessage: currentStep?.type === "controller-message",
-			condition3_hasVideoAsset: !!currentStep?.videoAsset,
-			condition4_videoEnded: isVideoActuallyEnded,
-			condition5_hasScenario: !!demoState.currentScenario,
-			condition6_buttonNotShowing: !showContinueButton,
-			condition7_correctStep: currentStep?.id === "step1" || currentStep?.id === "step9",
-			condition8_notTriggered: !continueButtonTriggeredRef.current
+			videoHasStarted: videoHasStartedRef.current,
+			videoManuallyStarted,
+			isVideoPlaying: demoState.isVideoPlaying,
+			showPostVideoButton,
+			continueButtonTriggered: continueButtonTriggeredRef.current
 		});
 		
 		if (
@@ -127,30 +120,19 @@ const ControllerView = () => {
 			currentStep.videoAsset &&
 			isVideoActuallyEnded &&
 			demoState.currentScenario &&
-			!showContinueButton && // Only trigger if button isn't already showing
-			(currentStep.id === "step1" || currentStep.id === "step10") && // Handle both video steps
-			!continueButtonTriggeredRef.current // Prevent duplicate triggers
+			!showPostVideoButton &&
+			(currentStep.id === "step1" || currentStep.id === "step10")
 		) {
-			console.log("✅ VIDEO END - Continue button conditions met for", currentStep.id);
-			console.log("✅ CONDITIONS MET - Setting continue button to show after 1 second delay");
+			console.log("✅ POST-VIDEO - Showing Continue button after delay");
 			
-			// Mark as triggered to prevent duplicate animations
-			continueButtonTriggeredRef.current = true;
-			
-			// Video has ended, add 1 second UX delay before showing continue button
-			// DON'T use cleanup return - let this timer complete no matter what
 			setTimeout(() => {
-				console.log("✅ 1 second delay elapsed - showing continue button for", currentStep.id);
-				console.log("🎬 CONTINUE BUTTON ANIMATION STARTED");
-				setShowContinueButton(true);
-			}, 1000); // 1 second delay
-		} else if (!continueButtonTriggeredRef.current) {
-			// Only log if we haven't already triggered the button - reduce noise
-			console.log("❌ Continue button conditions NOT met - missing conditions above");
+				console.log("🎬 POST-VIDEO CONTINUE BUTTON ANIMATION STARTED");
+				setShowPostVideoButton(true);
+			}, 1000);
 		}
 	}, [demoState.isVideoPlaying, currentStep, demoState.currentScenario, videoManuallyStarted]);
 
-	// Show continue button for non-video controller-message steps with delay
+	// Show NON-VIDEO Continue button for non-video controller-message steps
 	useEffect(() => {
 		if (
 			currentStep &&
@@ -158,34 +140,33 @@ const ControllerView = () => {
 			!currentStep.videoAsset &&
 			!currentStep.autoAdvanceDelay &&
 			demoState.currentScenario &&
-			!showContinueButton &&
+			!showNonVideoButton &&
 			!continueButtonTriggeredRef.current
 		) {
-			console.log("Non-video controller-message step - showing continue button after delay");
+			console.log("✅ NON-VIDEO - Showing Continue button after delay");
 			continueButtonTriggeredRef.current = true;
 			
-			// Brief delay for smooth animation
 			const timer = setTimeout(() => {
-				console.log("🎬 CONTINUE BUTTON ANIMATION STARTED (non-video step)");
-				setShowContinueButton(true);
-			}, 500); // Shorter delay for non-video steps
+				if (currentStep && !currentStep.videoAsset && !showNonVideoButton) {
+					console.log("🎬 NON-VIDEO CONTINUE BUTTON ANIMATION STARTED");
+					setShowNonVideoButton(true);
+				}
+			}, 500);
 			
 			return () => clearTimeout(timer);
 		}
 	}, [currentStep, demoState.currentScenario]);
 
-	// Show "Continue on TV" button for video steps that haven't been started yet
+	// Show PRE-VIDEO "Continue on TV" button for video steps that haven't started
 	useEffect(() => {
-		console.log("📺 'Continue on TV' button logic check:", {
-			hasCurrentStep: !!currentStep,
-			stepType: currentStep?.type,
+		console.log("📺 PRE-VIDEO 'Continue on TV' button logic:", {
+			stepId: currentStep?.id,
 			hasVideoAsset: !!currentStep?.videoAsset,
 			videoManuallyStarted,
 			isVideoPlaying: demoState.isVideoPlaying,
-			hasScenario: !!demoState.currentScenario,
-			showContinueButton,
-			continueButtonTriggered: continueButtonTriggeredRef.current,
-			stepId: currentStep?.id
+			videoHasStarted: videoHasStartedRef.current,
+			showPreVideoButton,
+			continueButtonTriggered: continueButtonTriggeredRef.current
 		});
 		
 		if (
@@ -194,22 +175,22 @@ const ControllerView = () => {
 			currentStep.videoAsset &&
 			!videoManuallyStarted &&
 			!demoState.isVideoPlaying &&
+			!videoHasStartedRef.current &&
 			demoState.currentScenario &&
-			!showContinueButton &&
+			!showPreVideoButton &&
 			!continueButtonTriggeredRef.current
 		) {
-			console.log("✅ Showing 'Continue on TV' button for video step:", currentStep.id);
+			console.log("✅ PRE-VIDEO - Showing 'Continue on TV' button");
 			continueButtonTriggeredRef.current = true;
 			
-			// Brief delay for smooth animation
 			const timer = setTimeout(() => {
-				console.log("🎬 'Continue on TV' button animation started");
-				setShowContinueButton(true);
+				if (currentStep && currentStep.videoAsset && !videoManuallyStarted && !demoState.isVideoPlaying && !videoHasStartedRef.current && !showPreVideoButton) {
+					console.log("🎬 PRE-VIDEO 'Continue on TV' BUTTON ANIMATION STARTED");
+					setShowPreVideoButton(true);
+				}
 			}, 500);
 			
 			return () => clearTimeout(timer);
-		} else {
-			console.log("❌ 'Continue on TV' button conditions not met for step:", currentStep?.id);
 		}
 	}, [currentStep, demoState.currentScenario, videoManuallyStarted, demoState.isVideoPlaying]);
 
@@ -245,9 +226,9 @@ const ControllerView = () => {
 
 		// Handle video start action
 		if (interaction.action === "start-video") {
-			console.log("🎬 Starting video manually - hiding continue button");
+			console.log("🎬 Starting video manually - hiding pre-video button");
 			setVideoManuallyStarted(true);
-			setShowContinueButton(false);
+			setShowPreVideoButton(false);
 			continueButtonTriggeredRef.current = false;
 			
 			const resolvedVideoUrl = resolveVideoAsset(currentStep.videoAsset);
@@ -618,30 +599,52 @@ const ControllerView = () => {
 									)}
 									<div className="continue-button-container">
 										{currentStep.type === "controller-message" && (
-											<button
-												className={`continue-button ${showContinueButton ? 'show' : 'hide'}`}
-												onClick={() => {
-													// Determine action based on video state
-													if (currentStep.videoAsset && !videoManuallyStarted) {
-														// Video step that hasn't been started - start video
-														handleInteraction({
-															id: "start-video",
-															action: "start-video",
-														});
-													} else {
-														// Non-video step or video finished - continue to next step
-														handleInteraction({
-															id: "continue",
-															action: "next-step",
-														});
-													}
-												}}
-											>
-												{currentStep.videoAsset && !videoManuallyStarted 
-													? "Continue on TV ➜" 
-													: "Continue ➜"
-												}
-											</button>
+											<>
+												{/* Pre-video button - "Continue on TV" */}
+												{currentStep.videoAsset && (
+													<button
+														className={`continue-button pre-video-button ${showPreVideoButton ? 'show' : 'hide'}`}
+														onClick={() => {
+															handleInteraction({
+																id: "start-video",
+																action: "start-video",
+															});
+														}}
+													>
+														Continue on TV ➜
+													</button>
+												)}
+												
+												{/* Post-video button - "Continue" */}
+												{currentStep.videoAsset && (
+													<button
+														className={`continue-button post-video-button ${showPostVideoButton ? 'show' : 'hide'}`}
+														onClick={() => {
+															handleInteraction({
+																id: "continue",
+																action: "next-step",
+															});
+														}}
+													>
+														Continue ➜
+													</button>
+												)}
+												
+												{/* Non-video button - regular "Continue" */}
+												{!currentStep.videoAsset && (
+													<button
+														className={`continue-button non-video-button ${showNonVideoButton ? 'show' : 'hide'}`}
+														onClick={() => {
+															handleInteraction({
+																id: "continue",
+																action: "next-step",
+															});
+														}}
+													>
+														Continue ➜
+													</button>
+												)}
+											</>
 										)}
 									</div>
 								</div>

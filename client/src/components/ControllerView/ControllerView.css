@@ -123,6 +123,28 @@
   pointer-events: auto;
 }
 
+/* Ensure all button variants occupy the exact same space */
+.continue-button.pre-video-button,
+.continue-button.post-video-button,
+.continue-button.non-video-button {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px); /* Center horizontally and hide vertically */
+  margin: 0;
+}
+
+.continue-button.pre-video-button.show,
+.continue-button.post-video-button.show,
+.continue-button.non-video-button.show {
+  transform: translateX(-50%) translateY(0); /* Center horizontally and show */
+}
+
+.continue-button.pre-video-button.hide,
+.continue-button.post-video-button.hide,
+.continue-button.non-video-button.hide {
+  transform: translateX(-50%) translateY(30px); /* Center horizontally and hide vertically */
+}
+
 /* Interaction Step */
 .interaction-step {
   display: flex;

@@ -66,6 +66,9 @@ const DisplayView = () => {
 				if (shouldLoadVideo && videoRef.current) {
 					console.log("Step has video, loading (not playing):", resolvedVideoUrl);
 					
+					// Clear any previous video URL cache first to prevent mix-ups
+					currentVideoRef.current = null;
+					
 					// Just load the video, don't play it
 					videoRef.current.src = resolvedVideoUrl;
 					videoRef.current.load();
@@ -124,10 +127,12 @@ const DisplayView = () => {
 			}
 			setCurrentScenario(null);
 			setCurrentStep(null);
+			setPreviousStepId(null);
 			setIsVideoPlaying(false);
 			setVideoEnded(false);
 			setIsVideoDelaying(false);
 			setShowEndFrameOverlay(false);
+			currentVideoRef.current = null; // Clear the cached video URL
 		}
 	}, [demoState.currentScenario, demoState.currentStep]);
 
@@ -151,6 +156,12 @@ const DisplayView = () => {
 			
 			if (videoUrl) {
 				console.log("🎬 Manual video play triggered, starting playback with URL:", videoUrl);
+				console.log("🔍 Video selection logic:", {
+					currentVideoRefValue: currentVideoRef.current,
+					currentStepVideoUrl: currentStepVideoUrl,
+					selectedVideoUrl: videoUrl,
+					currentStepId: currentStep?.id
+				});
 				
 				// Make sure video is loaded with correct source
 				if (videoRef.current.src !== videoUrl) {
@@ -202,6 +213,11 @@ const DisplayView = () => {
 
 	const handleVideoError = () => {
 		console.error("Video failed to load");
+		console.error("Video error details:", {
+			videoSrc: videoRef.current?.src,
+			currentVideoRef: currentVideoRef.current,
+			currentStep: currentStep?.id
+		});
 		setIsVideoPlaying(false);
 		setVideoEnded(false);
 		setIsVideoDelaying(false);
