@@ -233,11 +233,10 @@
 }
 
 .laptop-interaction-screenshot .screen-asset img {
-  width: 100%;
-  max-width: 2500px;
+  width: auto;
   height: auto;
-  max-height: calc(100vh - 250px);
-  min-height: calc(100vh - 400px);
+  max-width: 1400px;
+  max-height: 810px;
   object-fit: contain;
   object-position: center top;
   display: block;
@@ -995,11 +994,10 @@
   }
   
   .laptop-interaction-screenshot .screen-asset img {
-    width: 100%;
-    max-width: 2000px;
+    width: auto;
     height: auto;
-    max-height: 90vh;
-    min-height: 70vh;
+    max-width: 1400px;
+    max-height: 810px;
     object-fit: contain;
     object-position: center top;
     display: block;
@@ -1067,10 +1065,10 @@
   }
   
   .laptop-interaction-screenshot .screen-asset img {
-    width: 100%;
-    max-width: 1800px;
-    max-height: 85vh;
-    min-height: 65vh;
+    width: auto;
+    height: auto;
+    max-width: 1000px;
+    max-height: 579px;
     object-fit: contain;
     object-position: center top;
   }

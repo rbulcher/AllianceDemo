@@ -35,13 +35,15 @@ const DisplayView = () => {
 					setPreviousStepId(step.id);
 					setVideoEnded(false); // Only reset videoEnded on new steps
 					
-					// Don't reset showEndFrameOverlay if transitioning from step10 to step11
+					// Don't reset showEndFrameOverlay if transitioning between video and non-video steps that share endframes
 					// (both use the same endFrame and we want seamless transition)
-					if (!(previousStepId === "step10" && step.id === "step11")) {
+					const shouldPreserveEndFrame = (previousStepId === "step10" && step.id === "step11") || 
+												   (previousStepId === "step23" && step.id === "step24");
+					if (!shouldPreserveEndFrame) {
 						console.log("🔄 Resetting showEndFrameOverlay for new step transition:", previousStepId, "->", step.id);
 						setShowEndFrameOverlay(false);
 					} else {
-						console.log("🔄 Preserving showEndFrameOverlay during step10->step11 transition - keeping overlay visible");
+						console.log("🔄 Preserving showEndFrameOverlay during step transition - keeping overlay visible:", previousStepId, "->", step.id);
 					}
 				}
 				
@@ -96,8 +98,10 @@ const DisplayView = () => {
 					setIsVideoPlaying(false);
 					setVideoEnded(false);
 					setIsVideoDelaying(false);
-					// Don't reset showEndFrameOverlay during step10->step11 transition to prevent flicker
-					if (!(previousStepId === "step10" && step.id === "step11")) {
+					// Don't reset showEndFrameOverlay during transitions that preserve endframes
+					const shouldPreserveEndFrame = (previousStepId === "step10" && step.id === "step11") || 
+												   (previousStepId === "step23" && step.id === "step24");
+					if (!shouldPreserveEndFrame) {
 						setShowEndFrameOverlay(false);
 					}
 				} else if (!shouldLoadVideo) {
@@ -106,12 +110,14 @@ const DisplayView = () => {
 					setIsVideoPlaying(false);
 					setVideoEnded(false);
 					setIsVideoDelaying(false);
-					// Don't reset showEndFrameOverlay during step10->step11 transition to prevent flicker
-					if (!(previousStepId === "step10" && step.id === "step11")) {
+					// Don't reset showEndFrameOverlay during transitions that preserve endframes
+					const shouldPreserveEndFrame = (previousStepId === "step10" && step.id === "step11") || 
+												   (previousStepId === "step23" && step.id === "step24");
+					if (!shouldPreserveEndFrame) {
 						console.log("🔄 Resetting showEndFrameOverlay for non-video step:", previousStepId, "->", step.id);
 						setShowEndFrameOverlay(false);
 					} else {
-						console.log("🔄 Preserving showEndFrameOverlay in non-video logic during step10->step11 transition");
+						console.log("🔄 Preserving showEndFrameOverlay in non-video logic during step transition:", previousStepId, "->", step.id);
 					}
 					currentVideoRef.current = null;
 				}
@@ -150,7 +156,7 @@ const DisplayView = () => {
 			currentStepId: currentStep?.id
 		});
 		
-		if (demoState.isVideoPlaying && videoRef.current && !isVideoPlaying) {
+		if (demoState.isVideoPlaying && videoRef.current && !isVideoPlaying && !videoEnded) {
 			// Use currentVideoRef if available, otherwise use current step's video URL
 			const videoUrl = currentVideoRef.current || currentStepVideoUrl;
 			
@@ -293,9 +299,9 @@ const DisplayView = () => {
 								currentStep.type === "video" || 
 								(currentStep.type === "controller-message" && currentStep.videoAsset)
 							);
-							const isStep11WithEndFrame = currentStep?.id === "step11" && currentStep?.endFrameAsset;
-							console.log("Video display:", { hasVideo, shouldShowVideo, isVideoPlaying, isVideoDelaying, videoEnded, isStep11WithEndFrame });
-							return (shouldShowVideo || isStep11WithEndFrame) ? 'block' : 'none';
+							const isStepWithEndFrameOnly = (currentStep?.id === "step11" || currentStep?.id === "step24") && currentStep?.endFrameAsset;
+							console.log("Video display:", { hasVideo, shouldShowVideo, isVideoPlaying, isVideoDelaying, videoEnded, isStepWithEndFrameOnly });
+							return (shouldShowVideo || isStepWithEndFrameOnly) ? 'block' : 'none';
 						})()
 					}}
 				>
@@ -309,7 +315,7 @@ const DisplayView = () => {
 					>
 						Your browser does not support the video tag.
 					</video>
-					{!isVideoPlaying && !videoEnded && currentStep?.id !== "step11" && (
+					{!isVideoPlaying && !videoEnded && currentStep?.id !== "step11" && currentStep?.id !== "step24" && (
 						<div className="video-overlay">
 							{isVideoDelaying ? (
 								<h3>Video Starting...</h3>
@@ -320,15 +326,16 @@ const DisplayView = () => {
 					)}
 					{/* Early endFrame overlay to prevent flicker - shows before video ends and persists through step transition */}
 					{(() => {
-						// Show early overlay if flag is set OR if we're on step11 and came from step10 (backup failsafe)
-						const isStep11FromStep10 = currentStep?.id === "step11" && previousStepId === "step10";
+						// Show early overlay if flag is set OR if we're on endframe-only steps (backup failsafe)
+						const isEndFrameOnlyStep = ((currentStep?.id === "step11" && previousStepId === "step10") ||
+													(currentStep?.id === "step24" && previousStepId === "step23"));
 						const shouldShow = (showEndFrameOverlay && currentStep?.endFrameAsset) || 
-										  (isStep11FromStep10 && currentStep?.endFrameAsset);
+										  (isEndFrameOnlyStep && currentStep?.endFrameAsset);
 						console.log("🎬 Early endFrame overlay check:", {
 							stepId: currentStep?.id,
 							showEndFrameOverlay,
 							hasEndFrame: !!currentStep?.endFrameAsset,
-							isStep11FromStep10,
+							isEndFrameOnlyStep,
 							shouldShow,
 							previousStepId
 						});
@@ -355,7 +362,7 @@ const DisplayView = () => {
 					{/* Seamless endFrame overlay for any step with video and endFrame, or step 11 */}
 					{(() => {
 						const condition1 = currentStep?.endFrameAsset && videoEnded && currentStep?.videoAsset;
-						const condition2 = currentStep?.id === "step11" && currentStep?.endFrameAsset;
+						const condition2 = (currentStep?.id === "step11" || currentStep?.id === "step24") && currentStep?.endFrameAsset;
 						const condition3 = showEndFrameOverlay && currentStep?.endFrameAsset;
 						const shouldShow = condition1 || condition2 || condition3;
 						

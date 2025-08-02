@@ -9,9 +9,15 @@ import "./ControllerView.css";
 const ControllerView = () => {
 	// 🎯 DEBUG TOOL TOGGLE - Set to true to enable coordinate debugging
 	const ENABLE_DEBUG_TOOL = false;
-	
-	const { demoState, nextStep, startScenario, adminReset, isConnected, playVideo } =
-		useSocket("controller");
+
+	const {
+		demoState,
+		nextStep,
+		startScenario,
+		adminReset,
+		isConnected,
+		playVideo,
+	} = useSocket("controller");
 
 	const [currentScenario, setCurrentScenario] = useState(null);
 	const [currentStep, setCurrentStep] = useState(null);
@@ -63,7 +69,9 @@ const ControllerView = () => {
 					// Show zones permanently for image mapper steps
 					setShowZones(step.useImageMapper || false);
 					// Show mouse coordinates for image mapper steps (only if debug tool is enabled)
-					setShowMouseCoords((step.useImageMapper || false) && ENABLE_DEBUG_TOOL);
+					setShowMouseCoords(
+						(step.useImageMapper || false) && ENABLE_DEBUG_TOOL
+					);
 					// Reset continue button trigger flag for new step
 					continueButtonTriggeredRef.current = false;
 					// Only reset video started flag if we're actually changing steps
@@ -82,19 +90,25 @@ const ControllerView = () => {
 						// Only reset buttons if this is actually a new step, not just a video-end update
 						if (step.id !== currentStep?.id) {
 							// This is truly a new step - hide all buttons and reset
-							console.log("🔴 HIDING all continue buttons for new step transition");
+							console.log(
+								"🔴 HIDING all continue buttons for new step transition"
+							);
 							setShowPreVideoButton(false);
 							setShowPostVideoButton(false);
 							setShowNonVideoButton(false);
 							continueButtonTriggeredRef.current = false;
 						} else {
 							// Same step, might be video-end update - preserve button states
-							console.log("📹 Same step update - preserving continue button states");
+							console.log(
+								"📹 Same step update - preserving continue button states"
+							);
 						}
 						// Don't reset videoHasStartedRef here - let it persist for video end detection
 					} else {
 						// Reset all buttons for non-controller-message steps
-						console.log("🔄 Resetting all continue buttons for non-controller-message step");
+						console.log(
+							"🔄 Resetting all continue buttons for non-controller-message step"
+						);
 						setShowPreVideoButton(false);
 						setShowPostVideoButton(false);
 						setShowNonVideoButton(false);
@@ -107,7 +121,11 @@ const ControllerView = () => {
 
 	// Track when video starts playing (for manual and auto video start)
 	useEffect(() => {
-		if (demoState.isVideoPlaying && currentStep?.videoAsset && !videoHasStartedRef.current) {
+		if (
+			demoState.isVideoPlaying &&
+			currentStep?.videoAsset &&
+			!videoHasStartedRef.current
+		) {
 			console.log("🎥 VIDEO STARTED - Setting flag for step:", currentStep.id);
 			videoHasStartedRef.current = true;
 		}
@@ -116,8 +134,12 @@ const ControllerView = () => {
 
 	// Show POST-VIDEO Continue button after video ends
 	useEffect(() => {
-		const isVideoActuallyEnded = !demoState.isVideoPlaying && currentStep?.videoAsset && videoHasStartedRef.current && videoManuallyStarted;
-		
+		const isVideoActuallyEnded =
+			!demoState.isVideoPlaying &&
+			currentStep?.videoAsset &&
+			videoHasStartedRef.current &&
+			videoManuallyStarted;
+
 		console.log("🔍 POST-VIDEO Continue button logic:", {
 			stepId: currentStep?.id,
 			isVideoActuallyEnded,
@@ -125,9 +147,9 @@ const ControllerView = () => {
 			videoManuallyStarted,
 			isVideoPlaying: demoState.isVideoPlaying,
 			showPostVideoButton,
-			continueButtonTriggered: continueButtonTriggeredRef.current
+			continueButtonTriggered: continueButtonTriggeredRef.current,
 		});
-		
+
 		if (
 			currentStep &&
 			currentStep.type === "controller-message" &&
@@ -138,13 +160,18 @@ const ControllerView = () => {
 			(currentStep.id === "step1" || currentStep.id === "step10")
 		) {
 			console.log("✅ POST-VIDEO - Showing Continue button after delay");
-			
+
 			setTimeout(() => {
 				console.log("🎬 POST-VIDEO CONTINUE BUTTON ANIMATION STARTED");
 				setShowPostVideoButton(true);
 			}, 1000);
 		}
-	}, [demoState.isVideoPlaying, currentStep, demoState.currentScenario, videoManuallyStarted]);
+	}, [
+		demoState.isVideoPlaying,
+		currentStep,
+		demoState.currentScenario,
+		videoManuallyStarted,
+	]);
 
 	// Show NON-VIDEO Continue button for non-video controller-message steps
 	useEffect(() => {
@@ -159,14 +186,14 @@ const ControllerView = () => {
 		) {
 			console.log("✅ NON-VIDEO - Showing Continue button after delay");
 			continueButtonTriggeredRef.current = true;
-			
+
 			const timer = setTimeout(() => {
 				if (currentStep && !currentStep.videoAsset && !showNonVideoButton) {
 					console.log("🎬 NON-VIDEO CONTINUE BUTTON ANIMATION STARTED");
 					setShowNonVideoButton(true);
 				}
 			}, 500);
-			
+
 			return () => clearTimeout(timer);
 		}
 	}, [currentStep, demoState.currentScenario]);
@@ -180,9 +207,9 @@ const ControllerView = () => {
 			isVideoPlaying: demoState.isVideoPlaying,
 			videoHasStarted: videoHasStartedRef.current,
 			showPreVideoButton,
-			continueButtonTriggered: continueButtonTriggeredRef.current
+			continueButtonTriggered: continueButtonTriggeredRef.current,
 		});
-		
+
 		if (
 			currentStep &&
 			currentStep.type === "controller-message" &&
@@ -196,17 +223,29 @@ const ControllerView = () => {
 		) {
 			console.log("✅ PRE-VIDEO - Showing 'Continue on TV' button");
 			continueButtonTriggeredRef.current = true;
-			
+
 			const timer = setTimeout(() => {
-				if (currentStep && currentStep.videoAsset && !videoManuallyStarted && !demoState.isVideoPlaying && !videoHasStartedRef.current && !showPreVideoButton) {
+				if (
+					currentStep &&
+					currentStep.videoAsset &&
+					!videoManuallyStarted &&
+					!demoState.isVideoPlaying &&
+					!videoHasStartedRef.current &&
+					!showPreVideoButton
+				) {
 					console.log("🎬 PRE-VIDEO 'Continue on TV' BUTTON ANIMATION STARTED");
 					setShowPreVideoButton(true);
 				}
 			}, 500);
-			
+
 			return () => clearTimeout(timer);
 		}
-	}, [currentStep, demoState.currentScenario, videoManuallyStarted, demoState.isVideoPlaying]);
+	}, [
+		currentStep,
+		demoState.currentScenario,
+		videoManuallyStarted,
+		demoState.isVideoPlaying,
+	]);
 
 	// Auto-advance for controller-message steps with autoAdvanceDelay
 	useEffect(() => {
@@ -226,7 +265,6 @@ const ControllerView = () => {
 		}
 	}, [currentStep, demoState.currentScenario]);
 
-
 	// Debug: Track showZones changes
 	useEffect(() => {
 		console.log("showZones changed to:", showZones);
@@ -235,69 +273,130 @@ const ControllerView = () => {
 	// Mouse coordinate tracking for debugging image mapper positions
 	const handleMouseMove = (e) => {
 		if (!showMouseCoords) return;
-		
+
 		// Get the image element
-		const img = e.currentTarget.querySelector('img');
+		const img = e.currentTarget.querySelector("img");
 		if (!img) return;
-		
+
 		// Get the bounding rect of the image
 		const rect = img.getBoundingClientRect();
-		
+
 		// Calculate coordinates relative to the image
 		const x = Math.round(e.clientX - rect.left);
 		const y = Math.round(e.clientY - rect.top);
-		
-		setMouseCoords({ x, y });
-		
+
+		// Calculate scaled coordinates for scenarios.js (laptop: scale to 1400x810, phone: scale to 400x800)
+		const isLaptop = currentStep?.layoutType === "laptop";
+		const scaleX = isLaptop ? (x / rect.width) * 1400 : (x / rect.width) * 400;
+		const scaleY = isLaptop ? (y / rect.height) * 810 : (y / rect.height) * 800;
+
+		setMouseCoords({
+			x,
+			y,
+			scaledX: Math.round(scaleX),
+			scaledY: Math.round(scaleY),
+			actualWidth: Math.round(rect.width),
+			actualHeight: Math.round(rect.height),
+		});
+
 		// Update drag end position if dragging
 		if (isDragging) {
 			setDragEnd({ x, y });
-			
+
 			// Calculate selection rectangle
 			const startX = Math.min(dragStart.x, x);
 			const startY = Math.min(dragStart.y, y);
 			const width = Math.abs(x - dragStart.x);
 			const height = Math.abs(y - dragStart.y);
-			
+
+			// Calculate scaled selection rectangle for scenarios.js
+			const scaledStartX = isLaptop
+				? (startX / rect.width) * 1400
+				: (startX / rect.width) * 400;
+			const scaledStartY = isLaptop
+				? (startY / rect.height) * 810
+				: (startY / rect.height) * 800;
+			const scaledWidth = isLaptop
+				? (width / rect.width) * 1400
+				: (width / rect.width) * 400;
+			const scaledHeight = isLaptop
+				? (height / rect.height) * 810
+				: (height / rect.height) * 800;
+
 			setSelectionRect({
 				x: startX,
 				y: startY,
 				width,
-				height
+				height,
+				scaledX: Math.round(scaledStartX),
+				scaledY: Math.round(scaledStartY),
+				scaledWidth: Math.round(scaledWidth),
+				scaledHeight: Math.round(scaledHeight),
 			});
 		}
 	};
 
 	const handleMouseDown = (e) => {
 		if (!showMouseCoords) return;
-		
+
 		// Get the image element
-		const img = e.currentTarget.querySelector('img');
+		const img = e.currentTarget.querySelector("img");
 		if (!img) return;
-		
+
 		// Get the bounding rect of the image
 		const rect = img.getBoundingClientRect();
-		
+
 		// Calculate coordinates relative to the image
 		const x = Math.round(e.clientX - rect.left);
 		const y = Math.round(e.clientY - rect.top);
-		
+
 		setIsDragging(true);
 		setDragStart({ x, y });
 		setDragEnd({ x, y });
 		setSelectionRect(null);
-		
+
 		// Prevent default to avoid text selection
 		e.preventDefault();
 	};
 
 	const handleMouseUp = (e) => {
 		if (!showMouseCoords || !isDragging) return;
-		
+
 		setIsDragging(false);
-		
+
 		// Final selection rectangle is already set in handleMouseMove
-		console.log('🎯 Selection Rectangle:', selectionRect);
+		console.log("🎯 Selection Rectangle:", selectionRect);
+	};
+
+	// Copy to clipboard functions
+	const copyToClipboard = async (text) => {
+		try {
+			await navigator.clipboard.writeText(text);
+			console.log("Copied to clipboard:", text);
+		} catch (err) {
+			console.error("Failed to copy to clipboard:", err);
+		}
+	};
+
+	const copyPosition = () => {
+		if (selectionRect) {
+			const positionText = `{ x: ${selectionRect.scaledX}, y: ${selectionRect.scaledY} }`;
+			copyToClipboard(positionText);
+		}
+	};
+
+	const copySize = () => {
+		if (selectionRect) {
+			const sizeText = `{ width: ${selectionRect.scaledWidth}, height: ${selectionRect.scaledHeight} }`;
+			copyToClipboard(sizeText);
+		}
+	};
+
+	const copyBoth = () => {
+		if (selectionRect) {
+			const bothText = `position: { x: ${selectionRect.scaledX}, y: ${selectionRect.scaledY} },\nsize: { width: ${selectionRect.scaledWidth}, height: ${selectionRect.scaledHeight} },`;
+			copyToClipboard(bothText);
+		}
 	};
 
 	const handleInteraction = async (interaction, e) => {
@@ -312,20 +411,20 @@ const ControllerView = () => {
 			setVideoManuallyStarted(true);
 			setShowPreVideoButton(false);
 			continueButtonTriggeredRef.current = false;
-			
+
 			const resolvedVideoUrl = resolveVideoAsset(currentStep.videoAsset);
 			console.log("🎬 Calling playVideo with:", {
 				videoId: resolvedVideoUrl,
 				step: demoState.currentStep,
-				stepId: currentStep.id
+				stepId: currentStep.id,
 			});
-			
+
 			playVideo({
 				videoId: resolvedVideoUrl,
 				step: demoState.currentStep,
-				stepId: currentStep.id
+				stepId: currentStep.id,
 			});
-			
+
 			// Initialize audio feedback if needed and play tap sound
 			await audioFeedback.init();
 			audioFeedback.playTap();
@@ -374,7 +473,9 @@ const ControllerView = () => {
 
 		// Check if current step has no next step (end of scenario)
 		if (!currentStep.nextStep) {
-			console.log("No next step defined, going back to scenarios - COMPLETION PATH");
+			console.log(
+				"No next step defined, going back to scenarios - COMPLETION PATH"
+			);
 			handleBackToScenarios(true);
 			return;
 		}
@@ -405,14 +506,14 @@ const ControllerView = () => {
 	const handleScenarioSelect = async (scenarioId, e) => {
 		// Stop event propagation to prevent double-firing
 		e?.stopPropagation();
-		
+
 		// Initialize audio feedback on first user interaction (required for iOS)
 		await audioFeedback.init();
-		
+
 		// Play click sound instead of haptic feedback
 		audioFeedback.playClick();
 		console.log("Playing click sound for scenario selection");
-		
+
 		// Start all scenarios normally - let DisplayView handle video timing
 		startScenario(scenarioId);
 	};
@@ -421,27 +522,32 @@ const ControllerView = () => {
 		// Play tap sound for back navigation
 		await audioFeedback.init();
 		audioFeedback.playTap();
-		
+
 		// Mark scenario as completed if it finished successfully
 		if (scenarioCompleted && currentScenario) {
 			console.log("Marking scenario as completed:", currentScenario.id);
-			setCompletedScenarios(prev => {
+			setCompletedScenarios((prev) => {
 				const newCompleted = new Set(prev);
 				newCompleted.add(currentScenario.id);
 				console.log("Updated completed scenarios:", Array.from(newCompleted));
-				
+
 				// Auto-reset if all 5 scenarios are complete
 				if (newCompleted.size >= 5) {
 					console.log("All scenarios complete, resetting");
 					return new Set(); // Reset all completions
 				}
-				
+
 				return newCompleted;
 			});
 		} else {
-			console.log("Not marking as completed - scenarioCompleted:", scenarioCompleted, "currentScenario:", currentScenario?.id);
+			console.log(
+				"Not marking as completed - scenarioCompleted:",
+				scenarioCompleted,
+				"currentScenario:",
+				currentScenario?.id
+			);
 		}
-		
+
 		// Reset the demo state via socket
 		adminReset();
 		// Reset local state to show scenario selector
@@ -455,7 +561,7 @@ const ControllerView = () => {
 		// Play tap sound for reset
 		await audioFeedback.init();
 		audioFeedback.playTap();
-		
+
 		setCompletedScenarios(new Set());
 		adminReset();
 		setCurrentScenario(null);
@@ -515,7 +621,7 @@ const ControllerView = () => {
 						)}
 					</div>
 					{/* Reset Menu Button */}
-					<button 
+					<button
 						className="reset-menu-button"
 						onClick={handleResetMenu}
 						title="Reset Menu"
@@ -530,17 +636,19 @@ const ControllerView = () => {
 						return (
 							<div
 								key={scenario.id}
-								className={`scenario-card ${isCompleted ? 'completed' : ''}`}
+								className={`scenario-card ${isCompleted ? "completed" : ""}`}
 							>
 								<div className="scenario-header">
 									<h3>{scenario.title}</h3>
 								</div>
-								<button 
-									className={`start-button ${isCompleted ? 'completed' : ''}`}
+								<button
+									className={`start-button ${isCompleted ? "completed" : ""}`}
 									disabled={isCompleted}
-									onClick={(e) => !isCompleted && handleScenarioSelect(scenario.id, e)}
+									onClick={(e) =>
+										!isCompleted && handleScenarioSelect(scenario.id, e)
+									}
 								>
-									{isCompleted ? 'Completed' : 'Explore'}
+									{isCompleted ? "Completed" : "Explore"}
 								</button>
 							</div>
 						);
@@ -560,8 +668,12 @@ const ControllerView = () => {
 	}
 
 	// For scenario1 step10 video, show the same step11-style layout during video playback
-	if (demoState.isVideoPlaying && currentStep?.type === "video" && 
-		currentScenario?.id === "scenario1" && currentStep?.id === "step10") {
+	if (
+		demoState.isVideoPlaying &&
+		currentStep?.type === "video" &&
+		currentScenario?.id === "scenario1" &&
+		currentStep?.id === "step10"
+	) {
 		return (
 			<div
 				className="controller-view"
@@ -585,7 +697,9 @@ const ControllerView = () => {
 							<div className="controller-message-step relative-wrapper">
 								<div className="step-header">
 									<div className="highlight-text">{currentStep.title}</div>
-									<div className="secondary-text">{currentStep.description}</div>
+									<div className="secondary-text">
+										{currentStep.description}
+									</div>
 								</div>
 							</div>
 						</div>
@@ -641,21 +755,107 @@ const ControllerView = () => {
 			{showMouseCoords && (
 				<div className="mouse-coords-debug">
 					<div className="coords-display">
-						Mouse: X: {mouseCoords.x}, Y: {mouseCoords.y}
+						Raw: X: {mouseCoords.x}, Y: {mouseCoords.y}
+					</div>
+					<div className="coords-display">
+						Scaled: X: {mouseCoords.scaledX}, Y: {mouseCoords.scaledY}
+					</div>
+					<div
+						className="coords-display"
+						style={{ fontSize: "0.8rem", opacity: 0.7 }}
+					>
+						Image: {mouseCoords.actualWidth} × {mouseCoords.actualHeight}
 					</div>
 					{selectionRect && (
 						<div className="selection-display">
 							<div className="selection-title">🎯 Selection Rectangle:</div>
 							<div className="selection-data">
-								position: {`{ x: ${selectionRect.x}, y: ${selectionRect.y} }`}
+								Raw position:{" "}
+								{`{ x: ${selectionRect.x}, y: ${selectionRect.y} }`}
 							</div>
 							<div className="selection-data">
-								size: {`{ width: ${selectionRect.width}, height: ${selectionRect.height} }`}
+								Raw size:{" "}
+								{`{ width: ${selectionRect.width}, height: ${selectionRect.height} }`}
+							</div>
+							<div
+								className="selection-data"
+								style={{
+									backgroundColor: "rgba(0, 255, 255, 0.1)",
+									borderLeft: "3px solid #00ffff",
+								}}
+							>
+								Scaled position:{" "}
+								{`{ x: ${selectionRect.scaledX}, y: ${selectionRect.scaledY} }`}
+								<button
+									onClick={copyPosition}
+									style={{
+										marginLeft: "10px",
+										padding: "2px 6px",
+										fontSize: "0.7rem",
+										backgroundColor: "#00ffff",
+										color: "#000",
+										border: "none",
+										borderRadius: "3px",
+										cursor: "pointer",
+									}}
+								>
+									Copy
+								</button>
+							</div>
+							<div
+								className="selection-data"
+								style={{
+									backgroundColor: "rgba(0, 255, 255, 0.1)",
+									borderLeft: "3px solid #00ffff",
+								}}
+							>
+								Scaled size:{" "}
+								{`{ width: ${selectionRect.scaledWidth}, height: ${selectionRect.scaledHeight} }`}
+								<button
+									onClick={copySize}
+									style={{
+										marginLeft: "10px",
+										padding: "2px 6px",
+										fontSize: "0.7rem",
+										backgroundColor: "#00ffff",
+										color: "#000",
+										border: "none",
+										borderRadius: "3px",
+										cursor: "pointer",
+									}}
+								>
+									Copy
+								</button>
+							</div>
+							<div style={{ marginTop: "10px", textAlign: "center" }}>
+								<button
+									onClick={copyBoth}
+									style={{
+										padding: "4px 12px",
+										fontSize: "0.8rem",
+										backgroundColor: "#00ff00",
+										color: "#000",
+										border: "none",
+										borderRadius: "5px",
+										cursor: "pointer",
+										fontWeight: "bold",
+									}}
+								>
+									Copy Both for scenarios.js
+								</button>
 							</div>
 						</div>
 					)}
 					<div className="coords-help">
-						{isDragging ? 'Drag to select area...' : 'Click and drag to select interaction area'}
+						{isDragging
+							? "Drag to select area..."
+							: "Click and drag to select interaction area"}
+					</div>
+					<div
+						className="coords-help"
+						style={{ color: "#00ffff", marginTop: "0.5rem" }}
+					>
+						Use SCALED values in scenarios.js
 					</div>
 				</div>
 			)}
@@ -708,7 +908,9 @@ const ControllerView = () => {
 												{/* Pre-video button - "Continue on TV" */}
 												{currentStep.videoAsset && (
 													<button
-														className={`continue-button pre-video-button ${showPreVideoButton ? 'show' : 'hide'}`}
+														className={`continue-button pre-video-button ${
+															showPreVideoButton ? "show" : "hide"
+														}`}
 														onClick={() => {
 															handleInteraction({
 																id: "start-video",
@@ -719,11 +921,13 @@ const ControllerView = () => {
 														Continue on TV ➜
 													</button>
 												)}
-												
+
 												{/* Post-video button - "Continue" */}
 												{currentStep.videoAsset && (
 													<button
-														className={`continue-button post-video-button ${showPostVideoButton ? 'show' : 'hide'}`}
+														className={`continue-button post-video-button ${
+															showPostVideoButton ? "show" : "hide"
+														}`}
 														onClick={() => {
 															handleInteraction({
 																id: "continue",
@@ -734,11 +938,13 @@ const ControllerView = () => {
 														Continue ➜
 													</button>
 												)}
-												
+
 												{/* Non-video button - regular "Continue" */}
 												{!currentStep.videoAsset && (
 													<button
-														className={`continue-button non-video-button ${showNonVideoButton ? 'show' : 'hide'}`}
+														className={`continue-button non-video-button ${
+															showNonVideoButton ? "show" : "hide"
+														}`}
 														onClick={() => {
 															handleInteraction({
 																id: "continue",
@@ -757,8 +963,12 @@ const ControllerView = () => {
 
 							{/* Interaction Step with Screenshot */}
 							{currentStep.type === "interaction" && (
-								<div className={`interaction-step ${currentStep.layoutType === 'laptop' ? 'laptop-layout' : ''}`}>
-									{currentStep.layoutType === 'laptop' ? (
+								<div
+									className={`interaction-step ${
+										currentStep.layoutType === "laptop" ? "laptop-layout" : ""
+									}`}
+								>
+									{currentStep.layoutType === "laptop" ? (
 										// New laptop layout: title/description on top, image below
 										<div className="laptop-interaction-layout">
 											{/* Top section - Title and Description centered */}
@@ -779,7 +989,6 @@ const ControllerView = () => {
 															style={{
 																position: "relative",
 																display: "inline-block",
-																width: "100%",
 															}}
 															onMouseMove={handleMouseMove}
 															onMouseDown={handleMouseDown}
@@ -795,9 +1004,8 @@ const ControllerView = () => {
 																}}
 																style={{
 																	display: "block",
-																	width: "100%",
+																	maxWidth: "100%",
 																	height: "auto",
-																	objectFit: "contain",
 																}}
 															/>
 															{currentStep.useImageMapper &&
@@ -810,22 +1018,35 @@ const ControllerView = () => {
 																		}
 																		className={
 																			showZones
-																				? `assistance-zone-visible ${interaction.indicatorType || 'box'}-indicator`
+																				? `assistance-zone-visible ${
+																						interaction.indicatorType || "box"
+																				  }-indicator`
 																				: "assistance-zone-hidden"
 																		}
 																		style={{
 																			position: "absolute",
-																			left: `${interaction.position.x}px`,
-																			top: `${interaction.position.y}px`,
-																			width: `${interaction.size.width}px`,
-																			height: `${interaction.size.height}px`,
-																			borderRadius: interaction.indicatorType === 'circle' ? '50%' : '8px',
+																			left: `${
+																				(interaction.position.x / 1400) * 100
+																			}%`,
+																			top: `${
+																				(interaction.position.y / 810) * 100
+																			}%`,
+																			width: `${
+																				(interaction.size.width / 1400) * 100
+																			}%`,
+																			height: `${
+																				(interaction.size.height / 810) * 100
+																			}%`,
+																			borderRadius:
+																				interaction.indicatorType === "circle"
+																					? "50%"
+																					: "8px",
 																			cursor: "pointer",
 																			zIndex: 10,
 																		}}
 																	/>
 																))}
-															
+
 															{/* Selection rectangle overlay */}
 															{isDragging && selectionRect && (
 																<div
@@ -862,64 +1083,69 @@ const ControllerView = () => {
 
 											{/* Right side - Screenshot */}
 											<div className="interaction-screenshot">
-											{currentStep.screenAsset && (
-												<div className="screen-asset">
-													<div
-														style={{
-															position: "relative",
-															display: "inline-block",
-														}}
-														onMouseMove={handleMouseMove}
-														onMouseDown={handleMouseDown}
-														onMouseUp={handleMouseUp}
-													>
-														<img
-															src={currentStep.screenAsset}
-															alt={currentStep.title}
-															onLoad={() => setImageLoaded(true)}
-															onError={(e) => {
-																e.target.style.display = "none";
-																setImageLoaded(true); // Show indicators even on error
-															}}
+												{currentStep.screenAsset && (
+													<div className="screen-asset">
+														<div
 															style={{
-																display: "block",
-																maxWidth: "100%",
-																height: "auto",
+																position: "relative",
+																display: "inline-block",
 															}}
-														/>
-														{currentStep.useImageMapper &&
-															currentStep.interactions?.map((interaction) => (
-																<div
-																	key={interaction.id}
-																	data-interaction-zone="true"
-																	onClick={(e) =>
-																		handleInteraction(interaction, e)
-																	}
-																	className={
-																		showZones
-																			? `assistance-zone-visible ${interaction.indicatorType || 'box'}-indicator`
-																			: "assistance-zone-hidden"
-																	}
-																	style={{
-																		position: "absolute",
-																		left: `${
-																			(interaction.position.x / 400) * 100
-																		}%`,
-																		top: `${
-																			(interaction.position.y / 800) * 100
-																		}%`,
-																		width: `${
-																			(interaction.size.width / 400) * 100
-																		}%`,
-																		height: `${
-																			(interaction.size.height / 800) * 100
-																		}%`,
-																		borderRadius: interaction.indicatorType === 'circle' ? '50%' : '8px',
-																		cursor: "pointer",
-																		zIndex: 10,
-																	}}
-																/>
-															))}
+															onMouseMove={handleMouseMove}
+															onMouseDown={handleMouseDown}
+															onMouseUp={handleMouseUp}
+														>
+															<img
+																src={currentStep.screenAsset}
+																alt={currentStep.title}
+																onLoad={() => setImageLoaded(true)}
+																onError={(e) => {
+																	e.target.style.display = "none";
+																	setImageLoaded(true); // Show indicators even on error
+																}}
+																style={{
+																	display: "block",
+																	maxWidth: "100%",
+																	height: "auto",
+																}}
+															/>
+															{currentStep.useImageMapper &&
+																currentStep.interactions?.map((interaction) => (
+																	<div
+																		key={interaction.id}
+																		data-interaction-zone="true"
+																		onClick={(e) =>
+																			handleInteraction(interaction, e)
+																		}
+																		className={
+																			showZones
+																				? `assistance-zone-visible ${
+																						interaction.indicatorType || "box"
+																				  }-indicator`
+																				: "assistance-zone-hidden"
+																		}
+																		style={{
+																			position: "absolute",
+																			left: `${
+																				(interaction.position.x / 400) * 100
+																			}%`,
+																			top: `${
+																				(interaction.position.y / 800) * 100
+																			}%`,
+																			width: `${
+																				(interaction.size.width / 400) * 100
+																			}%`,
+																			height: `${
+																				(interaction.size.height / 800) * 100
+																			}%`,
+																			borderRadius:
+																				interaction.indicatorType === "circle"
+																					? "50%"
+																					: "8px",
+																			cursor: "pointer",
+																			zIndex: 10,
+																		}}
+																	/>
+																))}
 
 															{/* Selection rectangle overlay */}
 															{isDragging && selectionRect && (
@@ -937,32 +1163,34 @@ const ControllerView = () => {
 																	}}
 																/>
 															)}
+														</div>
 													</div>
-												</div>
-											)}
+												)}
 
-											{!currentStep.useImageMapper && (
-												<div className="interactions">
-													{currentStep.interactions?.map(
-														(interaction, index) => {
-															const isActive = buttonFeedback[interaction.id];
-															const buttonProps = getButtonProps(interaction);
-															return (
-																<button
-																	key={interaction.id}
-																	className={`interaction-button ${
-																		interaction.type
-																	} ${isActive ? "tapped" : ""}`}
-																	onClick={() => handleInteraction(interaction)}
-																	style={buttonProps}
-																></button>
-															);
-														}
-													)}
-												</div>
-											)}
+												{!currentStep.useImageMapper && (
+													<div className="interactions">
+														{currentStep.interactions?.map(
+															(interaction, index) => {
+																const isActive = buttonFeedback[interaction.id];
+																const buttonProps = getButtonProps(interaction);
+																return (
+																	<button
+																		key={interaction.id}
+																		className={`interaction-button ${
+																			interaction.type
+																		} ${isActive ? "tapped" : ""}`}
+																		onClick={() =>
+																			handleInteraction(interaction)
+																		}
+																		style={buttonProps}
+																	></button>
+																);
+															}
+														)}
+													</div>
+												)}
+											</div>
 										</div>
-									</div>
 									)}
 								</div>
 							)}
