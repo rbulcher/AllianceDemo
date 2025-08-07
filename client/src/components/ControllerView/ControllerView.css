@@ -46,6 +46,15 @@
   100% { transform: rotate(360deg); }
 }
 
+@keyframes pulse {
+  0% { opacity: 0.8; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+  100% { opacity: 0.8; transform: translateX(-50%) scale(1); }
+}
+
+.scroll-complete-button {
+  transition: all 0.3s ease;
+}
 
 /* Main content area */
 .controller-main {
@@ -615,7 +624,7 @@
 }
 
 .controller-view.scenario-selector .header h1 {
-  font-size: 5rem;
+  font-size: 3.8rem;
   margin-bottom: 1rem;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
   color: #e9511a;

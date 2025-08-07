@@ -64,7 +64,7 @@ export const MESSAGES = {
 	CONNECTED: "Connected successfully!",
 	DISCONNECTED: "Connection lost. Reconnecting...",
 	SCENARIO_LOADING: "Loading scenario...",
-	VIDEO_LOADING: "Loading video...",
+	VIDEO_LOADING: "Press continue on iPad to play video.",
 	STEP_COMPLETE: "Step completed!",
 	DEMO_COMPLETE: "Demo completed successfully!",
 };

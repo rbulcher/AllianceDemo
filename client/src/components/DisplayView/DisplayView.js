@@ -5,8 +5,12 @@ import { resolveVideoAsset } from "../../utils/videoUtils";
 import "./DisplayView.css";
 
 const DisplayView = () => {
-	const { demoState, videoStarted, videoEnded: notifyVideoEnded, isConnected } =
-		useSocket("display");
+	const {
+		demoState,
+		videoStarted,
+		videoEnded: notifyVideoEnded,
+		isConnected,
+	} = useSocket("display");
 
 	const [currentScenario, setCurrentScenario] = useState(null);
 	const [currentStep, setCurrentStep] = useState(null);
@@ -27,97 +31,153 @@ const DisplayView = () => {
 			if (scenario && scenario.steps[demoState.currentStep]) {
 				const step = scenario.steps[demoState.currentStep];
 				console.log("Current step:", step);
-				
+
 				// Check if this is a new step
 				const isNewStep = step.id !== previousStepId;
 				if (isNewStep) {
 					console.log("New step detected, resetting video states");
 					setPreviousStepId(step.id);
 					setVideoEnded(false); // Only reset videoEnded on new steps
-					
+
 					// Don't reset showEndFrameOverlay if transitioning between video and non-video steps that share endframes
 					// (both use the same endFrame and we want seamless transition)
-					const shouldPreserveEndFrame = (previousStepId === "step10" && step.id === "step11") || 
-												   (previousStepId === "step23" && step.id === "step24");
+					// Only preserve for scenario1 (step10->step11) and scenario4 (step23->step24) where step11/step24 are non-video steps
+					const shouldPreserveEndFrame =
+						(demoState.currentScenario === "scenario1" &&
+							previousStepId === "step10" &&
+							step.id === "step11") ||
+						(demoState.currentScenario === "scenario4" &&
+							previousStepId === "step23" &&
+							step.id === "step24");
 					if (!shouldPreserveEndFrame) {
-						console.log("🔄 Resetting showEndFrameOverlay for new step transition:", previousStepId, "->", step.id);
+						console.log(
+							"🔄 Resetting showEndFrameOverlay for new step transition:",
+							previousStepId,
+							"->",
+							step.id
+						);
 						setShowEndFrameOverlay(false);
 					} else {
-						console.log("🔄 Preserving showEndFrameOverlay during step transition - keeping overlay visible:", previousStepId, "->", step.id);
+						console.log(
+							"🔄 Preserving showEndFrameOverlay during step transition - keeping overlay visible:",
+							previousStepId,
+							"->",
+							step.id
+						);
 					}
 				}
-				
+
 				setCurrentStep(step);
 
 				// Load video but don't auto-play - wait for manual trigger
 				const resolvedVideoUrl = resolveVideoAsset(step.videoAsset);
-				const shouldLoadVideo = resolvedVideoUrl && (
-					step.type === "video" || 
-					(step.type === "controller-message" && step.videoAsset)
-				);
+				const shouldLoadVideo =
+					resolvedVideoUrl &&
+					(step.type === "video" ||
+						(step.type === "controller-message" && step.videoAsset));
 
-				console.log("Video logic check:", { 
-					shouldLoadVideo: shouldLoadVideo, 
+				console.log("Video logic check:", {
+					shouldLoadVideo: shouldLoadVideo,
 					hasVideoRef: !!videoRef.current,
 					stepType: step.type,
 					videoAsset: step.videoAsset,
 					resolvedUrl: resolvedVideoUrl,
-					stepId: step.id
+					stepId: step.id,
 				});
 
 				if (shouldLoadVideo && videoRef.current) {
-					console.log("Step has video, loading (not playing):", resolvedVideoUrl);
-					
+					console.log(
+						"Step has video, loading (not playing):",
+						resolvedVideoUrl
+					);
+
 					// Clear any previous video URL cache first to prevent mix-ups
 					currentVideoRef.current = null;
-					
+
 					// Just load the video, don't play it
 					videoRef.current.src = resolvedVideoUrl;
 					videoRef.current.load();
 					currentVideoRef.current = resolvedVideoUrl;
-					
-					console.log("✅ Video loaded and currentVideoRef set:", currentVideoRef.current);
-					
+
+					console.log(
+						"✅ Video loaded and currentVideoRef set:",
+						currentVideoRef.current
+					);
+
 					// Add timeupdate listener to show endFrame before video ends
 					const handleTimeUpdate = () => {
 						if (videoRef.current && currentStep?.endFrameAsset) {
 							const currentTime = videoRef.current.currentTime;
 							const duration = videoRef.current.duration;
-							
+
 							// Show endFrame overlay 2 seconds before video ends (increased for smoother transition)
-							if (duration && currentTime >= duration - 2.0 && !showEndFrameOverlay) {
-								console.log("🎬 Showing endFrame overlay to prevent flicker at", currentTime, "of", duration);
+							if (
+								duration &&
+								currentTime >= duration - 2.0 &&
+								!showEndFrameOverlay
+							) {
+								console.log(
+									"🎬 Showing endFrame overlay to prevent flicker at",
+									currentTime,
+									"of",
+									duration
+								);
 								setShowEndFrameOverlay(true);
 							}
 						}
 					};
-					
-					videoRef.current.addEventListener('timeupdate', handleTimeUpdate);
-					
+
+					videoRef.current.addEventListener("timeupdate", handleTimeUpdate);
+
 					// Reset states
 					setIsVideoPlaying(false);
 					setVideoEnded(false);
 					setIsVideoDelaying(false);
 					// Don't reset showEndFrameOverlay during transitions that preserve endframes
-					const shouldPreserveEndFrame = (previousStepId === "step10" && step.id === "step11") || 
-												   (previousStepId === "step23" && step.id === "step24");
+					const shouldPreserveEndFrame =
+						(demoState.currentScenario === "scenario1" &&
+							previousStepId === "step10" &&
+							step.id === "step11") ||
+						(demoState.currentScenario === "scenario4" &&
+							previousStepId === "step23" &&
+							step.id === "step24");
 					if (!shouldPreserveEndFrame) {
 						setShowEndFrameOverlay(false);
 					}
 				} else if (!shouldLoadVideo) {
-					console.log("❌ Video not loaded - shouldLoadVideo:", shouldLoadVideo, "hasVideoRef:", !!videoRef.current);
+					console.log(
+						"❌ Video not loaded - shouldLoadVideo:",
+						shouldLoadVideo,
+						"hasVideoRef:",
+						!!videoRef.current
+					);
 					// Reset video states for non-video steps
 					setIsVideoPlaying(false);
 					setVideoEnded(false);
 					setIsVideoDelaying(false);
 					// Don't reset showEndFrameOverlay during transitions that preserve endframes
-					const shouldPreserveEndFrame = (previousStepId === "step10" && step.id === "step11") || 
-												   (previousStepId === "step23" && step.id === "step24");
+					const shouldPreserveEndFrame =
+						(demoState.currentScenario === "scenario1" &&
+							previousStepId === "step10" &&
+							step.id === "step11") ||
+						(demoState.currentScenario === "scenario4" &&
+							previousStepId === "step23" &&
+							step.id === "step24");
 					if (!shouldPreserveEndFrame) {
-						console.log("🔄 Resetting showEndFrameOverlay for non-video step:", previousStepId, "->", step.id);
+						console.log(
+							"🔄 Resetting showEndFrameOverlay for non-video step:",
+							previousStepId,
+							"->",
+							step.id
+						);
 						setShowEndFrameOverlay(false);
 					} else {
-						console.log("🔄 Preserving showEndFrameOverlay in non-video logic during step transition:", previousStepId, "->", step.id);
+						console.log(
+							"🔄 Preserving showEndFrameOverlay in non-video logic during step transition:",
+							previousStepId,
+							"->",
+							step.id
+						);
 					}
 					currentVideoRef.current = null;
 				}
@@ -144,8 +204,10 @@ const DisplayView = () => {
 
 	// Handle manual video play trigger
 	useEffect(() => {
-		const currentStepVideoUrl = currentStep?.videoAsset ? resolveVideoAsset(currentStep.videoAsset) : null;
-		
+		const currentStepVideoUrl = currentStep?.videoAsset
+			? resolveVideoAsset(currentStep.videoAsset)
+			: null;
+
 		console.log("🎬 Video play trigger check:", {
 			demoStateVideoPlaying: demoState.isVideoPlaying,
 			hasVideoRef: !!videoRef.current,
@@ -153,29 +215,37 @@ const DisplayView = () => {
 			localIsVideoPlaying: isVideoPlaying,
 			currentVideoUrl: currentVideoRef.current,
 			currentStepVideoUrl: currentStepVideoUrl,
-			currentStepId: currentStep?.id
+			currentStepId: currentStep?.id,
 		});
-		
-		if (demoState.isVideoPlaying && videoRef.current && !isVideoPlaying && !videoEnded) {
+
+		if (
+			demoState.isVideoPlaying &&
+			videoRef.current &&
+			!isVideoPlaying &&
+			!videoEnded
+		) {
 			// Use currentVideoRef if available, otherwise use current step's video URL
 			const videoUrl = currentVideoRef.current || currentStepVideoUrl;
-			
+
 			if (videoUrl) {
-				console.log("🎬 Manual video play triggered, starting playback with URL:", videoUrl);
+				console.log(
+					"🎬 Manual video play triggered, starting playback with URL:",
+					videoUrl
+				);
 				console.log("🔍 Video selection logic:", {
 					currentVideoRefValue: currentVideoRef.current,
 					currentStepVideoUrl: currentStepVideoUrl,
 					selectedVideoUrl: videoUrl,
-					currentStepId: currentStep?.id
+					currentStepId: currentStep?.id,
 				});
-				
+
 				// Make sure video is loaded with correct source
 				if (videoRef.current.src !== videoUrl) {
 					console.log("🔄 Loading video source:", videoUrl);
 					videoRef.current.src = videoUrl;
 					videoRef.current.load();
 				}
-				
+
 				setIsVideoDelaying(false);
 				videoRef.current
 					.play()
@@ -195,25 +265,21 @@ const DisplayView = () => {
 		}
 	}, [demoState.isVideoPlaying, isVideoPlaying, currentStep]);
 
-
 	const handleVideoEnded = () => {
 		console.log("🎬 Video ended - updating states and notifying server");
 		setIsVideoPlaying(false);
 		setVideoEnded(true);
 
-		// Auto-progress for video steps OR controller-message steps with autoAdvanceOnVideoEnd flag
-		const shouldAutoProgress = currentStep?.type === "video" || (currentStep?.type === "controller-message" && currentStep?.autoAdvanceOnVideoEnd === true);
-		
-		console.log("Video end decision:", {
+		// Never auto-progress - always require manual Continue button press
+		console.log("Video ended:", {
 			stepType: currentStep?.type,
 			stepId: currentStep?.id,
-			shouldAutoProgress
 		});
 
 		notifyVideoEnded({
 			videoId: resolveVideoAsset(currentStep?.videoAsset) || "demo-video",
 			step: demoState.currentStep,
-			autoProgress: shouldAutoProgress
+			autoProgress: false,
 		});
 	};
 
@@ -222,7 +288,7 @@ const DisplayView = () => {
 		console.error("Video error details:", {
 			videoSrc: videoRef.current?.src,
 			currentVideoRef: currentVideoRef.current,
-			currentStep: currentStep?.id
+			currentStep: currentStep?.id,
 		});
 		setIsVideoPlaying(false);
 		setVideoEnded(false);
@@ -261,7 +327,7 @@ const DisplayView = () => {
 	}
 
 	return (
-		<div 
+		<div
 			className="display-view"
 			style={{
 				backgroundImage: "url(/assets/Background.png)",
@@ -289,20 +355,35 @@ const DisplayView = () => {
 
 			<div className="display-content">
 				{/* Always render video element so ref is available */}
-				<div 
-					className="video-container" 
-					style={{ 
+				<div
+					className="video-container"
+					style={{
 						display: (() => {
 							// Show video container if step has video OR if it's step 10 with endFrame
 							const hasVideo = resolveVideoAsset(currentStep?.videoAsset);
-							const shouldShowVideo = hasVideo && (
-								currentStep.type === "video" || 
-								(currentStep.type === "controller-message" && currentStep.videoAsset)
-							);
-							const isStepWithEndFrameOnly = (currentStep?.id === "step11" || currentStep?.id === "step24") && currentStep?.endFrameAsset;
-							console.log("Video display:", { hasVideo, shouldShowVideo, isVideoPlaying, isVideoDelaying, videoEnded, isStepWithEndFrameOnly });
-							return (shouldShowVideo || isStepWithEndFrameOnly) ? 'block' : 'none';
-						})()
+							const shouldShowVideo =
+								hasVideo &&
+								(currentStep.type === "video" ||
+									(currentStep.type === "controller-message" &&
+										currentStep.videoAsset));
+							const isStepWithEndFrameOnly =
+								((demoState.currentScenario === "scenario1" &&
+									currentStep?.id === "step11") ||
+									(demoState.currentScenario === "scenario4" &&
+										currentStep?.id === "step24")) &&
+								currentStep?.endFrameAsset;
+							console.log("Video display:", {
+								hasVideo,
+								shouldShowVideo,
+								isVideoPlaying,
+								isVideoDelaying,
+								videoEnded,
+								isStepWithEndFrameOnly,
+							});
+							return shouldShowVideo || isStepWithEndFrameOnly
+								? "block"
+								: "none";
+						})(),
 					}}
 				>
 					<video
@@ -315,57 +396,79 @@ const DisplayView = () => {
 					>
 						Your browser does not support the video tag.
 					</video>
-					{!isVideoPlaying && !videoEnded && currentStep?.id !== "step11" && currentStep?.id !== "step24" && (
-						<div className="video-overlay">
-							{isVideoDelaying ? (
-								<h3>Video Starting...</h3>
-							) : (
-								<h3>Loading video...</h3>
-							)}
-						</div>
-					)}
+					{!isVideoPlaying &&
+						!videoEnded &&
+						!(
+							(demoState.currentScenario === "scenario1" &&
+								currentStep?.id === "step11") ||
+							(demoState.currentScenario === "scenario4" &&
+								currentStep?.id === "step24")
+						) && (
+							<div className="video-overlay">
+								{isVideoDelaying ? (
+									<h3>Video Starting...</h3>
+								) : (
+									<h3>Press continue on iPad to play video</h3>
+								)}
+							</div>
+						)}
 					{/* Early endFrame overlay to prevent flicker - shows before video ends and persists through step transition */}
 					{(() => {
 						// Show early overlay if flag is set OR if we're on endframe-only steps (backup failsafe)
-						const isEndFrameOnlyStep = ((currentStep?.id === "step11" && previousStepId === "step10") ||
-													(currentStep?.id === "step24" && previousStepId === "step23"));
-						const shouldShow = (showEndFrameOverlay && currentStep?.endFrameAsset) || 
-										  (isEndFrameOnlyStep && currentStep?.endFrameAsset);
+						const isEndFrameOnlyStep =
+							(demoState.currentScenario === "scenario1" &&
+								currentStep?.id === "step11" &&
+								previousStepId === "step10") ||
+							(demoState.currentScenario === "scenario4" &&
+								currentStep?.id === "step24" &&
+								previousStepId === "step23");
+						const shouldShow =
+							(showEndFrameOverlay && currentStep?.endFrameAsset) ||
+							(isEndFrameOnlyStep && currentStep?.endFrameAsset);
 						console.log("🎬 Early endFrame overlay check:", {
 							stepId: currentStep?.id,
 							showEndFrameOverlay,
 							hasEndFrame: !!currentStep?.endFrameAsset,
 							isEndFrameOnlyStep,
 							shouldShow,
-							previousStepId
+							previousStepId,
 						});
 						return shouldShow;
 					})() && (
-						<img 
-							src={currentStep.endFrameAsset} 
+						<img
+							src={currentStep.endFrameAsset}
 							alt="Video end frame (early overlay)"
 							className="demo-video"
 							style={{
-								position: 'absolute',
+								position: "absolute",
 								top: 0,
 								left: 0,
-								width: '100%',
-								height: '100%',
-								objectFit: 'cover',
+								width: "100%",
+								height: "100%",
+								objectFit: "cover",
 								zIndex: 15, // Higher than regular overlay to show on top of video
 								opacity: 1,
-								pointerEvents: 'none' // Don't interfere with video events
+								pointerEvents: "none", // Don't interfere with video events
 							}}
 							onLoad={() => console.log("🖼️ Early endFrame overlay loaded")}
 						/>
 					)}
 					{/* Seamless endFrame overlay for any step with video and endFrame, or step 11 */}
 					{(() => {
-						const condition1 = currentStep?.endFrameAsset && videoEnded && currentStep?.videoAsset;
-						const condition2 = (currentStep?.id === "step11" || currentStep?.id === "step24") && currentStep?.endFrameAsset;
-						const condition3 = showEndFrameOverlay && currentStep?.endFrameAsset;
+						const condition1 =
+							currentStep?.endFrameAsset &&
+							videoEnded &&
+							currentStep?.videoAsset;
+						const condition2 =
+							((demoState.currentScenario === "scenario1" &&
+								currentStep?.id === "step11") ||
+								(demoState.currentScenario === "scenario4" &&
+									currentStep?.id === "step24")) &&
+							currentStep?.endFrameAsset;
+						const condition3 =
+							showEndFrameOverlay && currentStep?.endFrameAsset;
 						const shouldShow = condition1 || condition2 || condition3;
-						
+
 						console.log("🖼️ Regular endFrame overlay check:", {
 							stepId: currentStep?.id,
 							hasEndFrame: !!currentStep?.endFrameAsset,
@@ -373,25 +476,25 @@ const DisplayView = () => {
 							hasVideoAsset: !!currentStep?.videoAsset,
 							showEndFrameOverlay,
 							condition1,
-							condition2, 
+							condition2,
 							condition3,
-							shouldShow
+							shouldShow,
 						});
-						
+
 						return shouldShow;
 					})() && (
-						<img 
-							src={currentStep.endFrameAsset} 
+						<img
+							src={currentStep.endFrameAsset}
 							alt="Video end frame"
 							className="demo-video"
 							style={{
-								position: 'absolute',
+								position: "absolute",
 								top: 0,
 								left: 0,
-								width: '100%',
-								height: '100%',
-								objectFit: 'cover',
-								zIndex: 10
+								width: "100%",
+								height: "100%",
+								objectFit: "cover",
+								zIndex: 10,
 							}}
 						/>
 					)}
@@ -399,11 +502,15 @@ const DisplayView = () => {
 
 				{(() => {
 					const hasVideo = resolveVideoAsset(currentStep?.videoAsset);
-					const shouldShowVideo = hasVideo && (
-						currentStep.type === "video" || 
-						(currentStep.type === "controller-message" && currentStep.videoAsset)
-					);
-					const shouldShowEndFrameInVideoContainer = currentStep?.type === "controller-message" && currentStep?.endFrameAsset && (videoEnded || !currentStep?.videoAsset);
+					const shouldShowVideo =
+						hasVideo &&
+						(currentStep.type === "video" ||
+							(currentStep.type === "controller-message" &&
+								currentStep.videoAsset));
+					const shouldShowEndFrameInVideoContainer =
+						currentStep?.type === "controller-message" &&
+						currentStep?.endFrameAsset &&
+						(videoEnded || !currentStep?.videoAsset);
 					return !shouldShowVideo && !shouldShowEndFrameInVideoContainer;
 				})() && (
 					<div className="step-display">
@@ -413,14 +520,14 @@ const DisplayView = () => {
 								{currentStep?.type !== "controller-message" && (
 									<>
 										{currentStep?.endFrameAsset && videoEnded ? (
-											<img 
-												src={currentStep.endFrameAsset} 
+											<img
+												src={currentStep.endFrameAsset}
 												alt="Video end frame"
 												className="end-frame-image"
 												style={{
-													maxWidth: '100%',
-													maxHeight: '80vh',
-													objectFit: 'contain'
+													maxWidth: "100%",
+													maxHeight: "80vh",
+													objectFit: "contain",
 												}}
 											/>
 										) : (
@@ -440,7 +547,6 @@ const DisplayView = () => {
 									</div>
 								)}
 							</div>
-
 
 							{currentStep?.type === "completion" && (
 								<div className="completion-message">

@@ -37,11 +37,19 @@ const ControllerView = () => {
 	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 	const [dragEnd, setDragEnd] = useState({ x: 0, y: 0 });
 	const [selectionRect, setSelectionRect] = useState(null);
+	const [scrollableReportState, setScrollableReportState] = useState({
+		scrollPosition: 0,
+		isDragging: false,
+		dragStartY: 0,
+		scrollProgress: 0,
+		isScrollComplete: false,
+	});
 	const pulseTimerRef = useRef(null);
 	const phoneScreenRef = useRef(null);
 	const continueButtonTriggeredRef = useRef(false);
 	const videoHasStartedRef = useRef(false);
 	const continueButtonTimerRef = useRef(null);
+	const reportImageRef = useRef(null);
 
 	// Use button positions and sizes directly from scenarios without scaling
 	const getButtonProps = (interaction) => {
@@ -51,6 +59,131 @@ const ControllerView = () => {
 			width: `${interaction.size.width}px`,
 			height: `${interaction.size.height}px`,
 		};
+	};
+
+	// Scrollable Report Event Handlers
+	const handleReportScrollStart = (clientY) => {
+		setScrollableReportState((prev) => ({
+			...prev,
+			isDragging: true,
+			dragStartY: clientY,
+		}));
+	};
+
+	const handleReportScrollMove = (clientY) => {
+		if (
+			!scrollableReportState.isDragging ||
+			!reportImageRef.current ||
+			!currentStep?.scrollableReport
+		)
+			return;
+
+		const deltaY = scrollableReportState.dragStartY - clientY;
+		const newScrollPosition = Math.max(
+			0,
+			Math.min(
+				scrollableReportState.scrollPosition + deltaY,
+				getMaxScrollPosition()
+			)
+		);
+
+		const scrollProgress =
+			getMaxScrollPosition() > 0
+				? newScrollPosition / getMaxScrollPosition()
+				: 0;
+		const isScrollComplete =
+			scrollProgress >=
+			(currentStep.scrollableReport.scrollCompleteThreshold || 0.8);
+
+		setScrollableReportState((prev) => ({
+			...prev,
+			scrollPosition: newScrollPosition,
+			dragStartY: clientY,
+			scrollProgress,
+			isScrollComplete,
+		}));
+	};
+
+	// Get the appropriate screen asset based on scroll progress
+	const getScreenAsset = () => {
+		if (
+			currentStep.id === "step14" &&
+			currentStep.screenAsset === "/assets/screenshots/scenario2/12.png"
+		) {
+			// For step14, swap to 12.5.png when scroll reaches the bottom (>=80%)
+			if (scrollableReportState.scrollProgress >= 0.8) {
+				return "/assets/screenshots/scenario2/12.5.png";
+			}
+		}
+		return currentStep.screenAsset;
+	};
+
+	const handleReportScrollEnd = () => {
+		setScrollableReportState((prev) => ({
+			...prev,
+			isDragging: false,
+		}));
+	};
+
+	const getMaxScrollPosition = () => {
+		if (!reportImageRef.current || !currentStep?.scrollableReport) return 0;
+
+		// Get the actual rendered dimensions of the image element
+		const imgElement = reportImageRef.current;
+		const actualRenderedHeight =
+			imgElement.offsetHeight || imgElement.clientHeight;
+		const containerHeight = currentStep.scrollableReport.viewportBounds.height;
+
+		console.log(
+			"Scroll calc - Rendered height:",
+			actualRenderedHeight,
+			"Container height:",
+			containerHeight
+		);
+
+		return Math.max(0, actualRenderedHeight - containerHeight);
+	};
+
+	// Mouse events for scrollable report
+	const handleReportMouseDown = (e) => {
+		e.preventDefault();
+		handleReportScrollStart(e.clientY);
+	};
+
+	const handleReportMouseMove = (e) => {
+		if (scrollableReportState.isDragging) {
+			e.preventDefault();
+			handleReportScrollMove(e.clientY);
+		}
+	};
+
+	const handleReportMouseUp = (e) => {
+		if (scrollableReportState.isDragging) {
+			e.preventDefault();
+			handleReportScrollEnd();
+		}
+	};
+
+	// Touch events for scrollable report
+	const handleReportTouchStart = (e) => {
+		e.preventDefault();
+		const touch = e.touches[0];
+		handleReportScrollStart(touch.clientY);
+	};
+
+	const handleReportTouchMove = (e) => {
+		if (scrollableReportState.isDragging && e.touches.length === 1) {
+			e.preventDefault();
+			const touch = e.touches[0];
+			handleReportScrollMove(touch.clientY);
+		}
+	};
+
+	const handleReportTouchEnd = (e) => {
+		if (scrollableReportState.isDragging) {
+			e.preventDefault();
+			handleReportScrollEnd();
+		}
 	};
 
 	useEffect(() => {
@@ -79,6 +212,14 @@ const ControllerView = () => {
 						console.log("🆕 NEW STEP - Resetting video flag for:", step.id);
 						videoHasStartedRef.current = false;
 						setVideoManuallyStarted(false); // Reset manual video start flag
+						// Reset scrollable report state for new step
+						setScrollableReportState({
+							scrollPosition: 0,
+							isDragging: false,
+							dragStartY: 0,
+							scrollProgress: 0,
+							isScrollComplete: false,
+						});
 						// Only reset imageLoaded for steps that actually have images
 						if (step.screenAsset) {
 							setImageLoaded(false); // Reset image loaded state for new step
@@ -132,6 +273,25 @@ const ControllerView = () => {
 		// Don't reset the flag when video stops - we need it for continue button logic
 	}, [demoState.isVideoPlaying, currentStep]);
 
+	// Global event listeners for scrollable report dragging
+	useEffect(() => {
+		if (scrollableReportState.isDragging) {
+			document.addEventListener("mousemove", handleReportMouseMove);
+			document.addEventListener("mouseup", handleReportMouseUp);
+			document.addEventListener("touchmove", handleReportTouchMove, {
+				passive: false,
+			});
+			document.addEventListener("touchend", handleReportTouchEnd);
+
+			return () => {
+				document.removeEventListener("mousemove", handleReportMouseMove);
+				document.removeEventListener("mouseup", handleReportMouseUp);
+				document.removeEventListener("touchmove", handleReportTouchMove);
+				document.removeEventListener("touchend", handleReportTouchEnd);
+			};
+		}
+	}, [scrollableReportState.isDragging]);
+
 	// Show POST-VIDEO Continue button after video ends
 	useEffect(() => {
 		const isVideoActuallyEnded =
@@ -156,8 +316,7 @@ const ControllerView = () => {
 			currentStep.videoAsset &&
 			isVideoActuallyEnded &&
 			demoState.currentScenario &&
-			!showPostVideoButton &&
-			(currentStep.id === "step1" || currentStep.id === "step10")
+			!showPostVideoButton
 		) {
 			console.log("✅ POST-VIDEO - Showing Continue button after delay");
 
@@ -612,7 +771,7 @@ const ControllerView = () => {
 				}}
 			>
 				<div className="header">
-					<h1>Think You Can Run a Laundromat?</h1>
+					<h1>Explore Insights to make your laundromat easier</h1>
 					<div className="connection-status">
 						{isConnected ? (
 							<span className="connected">🟢 Connected</span>
@@ -887,10 +1046,7 @@ const ControllerView = () => {
 											</div>
 											<div className="interaction-screenshot">
 												<div className="screen-asset">
-													<img
-														src={currentStep.screenAsset}
-														alt={currentStep.title}
-													/>
+													<img src={getScreenAsset()} alt={currentStep.title} />
 												</div>
 											</div>
 										</div>
@@ -940,16 +1096,40 @@ const ControllerView = () => {
 												)}
 
 												{/* Non-video button - regular "Continue" */}
-												{!currentStep.videoAsset && (
+												{!currentStep.videoAsset &&
+													!currentStep.scrollableReport && (
+														<button
+															className={`continue-button non-video-button ${
+																showNonVideoButton ? "show" : "hide"
+															}`}
+															onClick={() => {
+																handleInteraction({
+																	id: "continue",
+																	action: "next-step",
+																});
+															}}
+														>
+															Continue ➜
+														</button>
+													)}
+
+												{/* Scroll-complete button - appears after scrolling through report */}
+												{currentStep.scrollableReport && (
 													<button
-														className={`continue-button non-video-button ${
-															showNonVideoButton ? "show" : "hide"
+														className={`continue-button scroll-complete-button ${
+															scrollableReportState.isScrollComplete
+																? "show"
+																: "hide"
 														}`}
 														onClick={() => {
-															handleInteraction({
-																id: "continue",
-																action: "next-step",
-															});
+															const scrollCompleteInteraction =
+																currentStep.interactions?.find(
+																	(interaction) =>
+																		interaction.type === "scroll-complete"
+																);
+															if (scrollCompleteInteraction) {
+																handleInteraction(scrollCompleteInteraction);
+															}
 														}}
 													>
 														Continue ➜
@@ -995,7 +1175,7 @@ const ControllerView = () => {
 															onMouseUp={handleMouseUp}
 														>
 															<img
-																src={currentStep.screenAsset}
+																src={getScreenAsset()}
 																alt={currentStep.title}
 																onLoad={() => setImageLoaded(true)}
 																onError={(e) => {
@@ -1008,44 +1188,150 @@ const ControllerView = () => {
 																	height: "auto",
 																}}
 															/>
-															{currentStep.useImageMapper &&
-																currentStep.interactions?.map((interaction) => (
-																	<div
-																		key={interaction.id}
-																		data-interaction-zone="true"
-																		onClick={(e) =>
-																			handleInteraction(interaction, e)
+
+															{/* Scrollable Report Overlay */}
+															{currentStep.scrollableReport && (
+																<div
+																	style={{
+																		position: "absolute",
+																		left: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.x /
+																				1200) *
+																			100
+																		}%`,
+																		top: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.y /
+																				675) *
+																			100
+																		}%`,
+																		width: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.width /
+																				1200) *
+																			100
+																		}%`,
+																		height: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.height /
+																				675) *
+																			100
+																		}%`,
+																		overflow: "hidden",
+																		cursor: scrollableReportState.isDragging
+																			? "grabbing"
+																			: "grab",
+																		willChange: "contents",
+																		contain: "layout",
+																	}}
+																	onMouseDown={handleReportMouseDown}
+																	onTouchStart={handleReportTouchStart}
+																>
+																	<img
+																		ref={reportImageRef}
+																		src={
+																			currentStep.scrollableReport.reportImage
 																		}
-																		className={
-																			showZones
-																				? `assistance-zone-visible ${
-																						interaction.indicatorType || "box"
-																				  }-indicator`
-																				: "assistance-zone-hidden"
-																		}
+																		alt="Scrollable Report"
 																		style={{
 																			position: "absolute",
-																			left: `${
-																				(interaction.position.x / 1400) * 100
-																			}%`,
-																			top: `${
-																				(interaction.position.y / 810) * 100
-																			}%`,
-																			width: `${
-																				(interaction.size.width / 1400) * 100
-																			}%`,
-																			height: `${
-																				(interaction.size.height / 810) * 100
-																			}%`,
-																			borderRadius:
-																				interaction.indicatorType === "circle"
-																					? "50%"
-																					: "8px",
-																			cursor: "pointer",
-																			zIndex: 10,
+																			top: `-${scrollableReportState.scrollPosition}px`,
+																			left: 0,
+																			width: "100%",
+																			height: "100%",
+																			minHeight: "2250px",
+																			objectFit: "cover",
+																			objectPosition: "top left",
+																			pointerEvents: "none",
+																			userSelect: "none",
+																			willChange: "transform",
+																			transform: "translateZ(0)",
+																		}}
+																		onLoad={() => {
+																			console.log(
+																				"Report image loaded:",
+																				reportImageRef.current?.naturalHeight
+																			);
 																		}}
 																	/>
-																))}
+																</div>
+															)}
+
+															{/* Standard interaction button for step14 when scroll is complete - OUTSIDE scrollable container */}
+															{currentStep.id === "step14" &&
+																currentStep.scrollableReport &&
+																currentStep.scrollableReport.interactionButton &&
+																scrollableReportState.scrollProgress >= 0.8 && (
+																	<button
+																		className="interaction-button box-indicator assistance-zone-visible"
+																		onClick={(e) => {
+																			e.preventDefault();
+																			e.stopPropagation();
+																			console.log(
+																				"Step14 interaction button clicked"
+																			);
+																			handleInteraction({
+																				id: "step14-complete",
+																				action: "next-step",
+																			});
+																		}}
+																		style={{
+																			position: "absolute",
+																			left: `${(currentStep.scrollableReport.interactionButton.position.x / 1400) * 100}%`,
+																			top: `${(currentStep.scrollableReport.interactionButton.position.y / 810) * 100}%`,
+																			width: `${(currentStep.scrollableReport.interactionButton.size.width / 1400) * 100}%`,
+																			height: `${(currentStep.scrollableReport.interactionButton.size.height / 810) * 100}%`,
+																			zIndex: 30,
+																		}}
+																	></button>
+																)}
+
+															{currentStep.useImageMapper &&
+																currentStep.interactions
+																	?.filter(
+																		(interaction) =>
+																			interaction.type !== "scroll-complete" &&
+																			interaction.position &&
+																			interaction.size
+																	)
+																	.map((interaction) => (
+																		<div
+																			key={interaction.id}
+																			data-interaction-zone="true"
+																			onClick={(e) =>
+																				handleInteraction(interaction, e)
+																			}
+																			className={
+																				showZones
+																					? `assistance-zone-visible ${
+																							interaction.indicatorType || "box"
+																					  }-indicator`
+																					: "assistance-zone-hidden"
+																			}
+																			style={{
+																				position: "absolute",
+																				left: `${
+																					(interaction.position.x / 1400) * 100
+																				}%`,
+																				top: `${
+																					(interaction.position.y / 810) * 100
+																				}%`,
+																				width: `${
+																					(interaction.size.width / 1400) * 100
+																				}%`,
+																				height: `${
+																					(interaction.size.height / 810) * 100
+																				}%`,
+																				borderRadius:
+																					interaction.indicatorType === "circle"
+																						? "50%"
+																						: "8px",
+																				cursor: "pointer",
+																				zIndex: 10,
+																			}}
+																		/>
+																	))}
 
 															{/* Selection rectangle overlay */}
 															{isDragging && selectionRect && (
@@ -1095,7 +1381,7 @@ const ControllerView = () => {
 															onMouseUp={handleMouseUp}
 														>
 															<img
-																src={currentStep.screenAsset}
+																src={getScreenAsset()}
 																alt={currentStep.title}
 																onLoad={() => setImageLoaded(true)}
 																onError={(e) => {
@@ -1109,43 +1395,50 @@ const ControllerView = () => {
 																}}
 															/>
 															{currentStep.useImageMapper &&
-																currentStep.interactions?.map((interaction) => (
-																	<div
-																		key={interaction.id}
-																		data-interaction-zone="true"
-																		onClick={(e) =>
-																			handleInteraction(interaction, e)
-																		}
-																		className={
-																			showZones
-																				? `assistance-zone-visible ${
-																						interaction.indicatorType || "box"
-																				  }-indicator`
-																				: "assistance-zone-hidden"
-																		}
-																		style={{
-																			position: "absolute",
-																			left: `${
-																				(interaction.position.x / 400) * 100
-																			}%`,
-																			top: `${
-																				(interaction.position.y / 800) * 100
-																			}%`,
-																			width: `${
-																				(interaction.size.width / 400) * 100
-																			}%`,
-																			height: `${
-																				(interaction.size.height / 800) * 100
-																			}%`,
-																			borderRadius:
-																				interaction.indicatorType === "circle"
-																					? "50%"
-																					: "8px",
-																			cursor: "pointer",
-																			zIndex: 10,
-																		}}
-																	/>
-																))}
+																currentStep.interactions
+																	?.filter(
+																		(interaction) =>
+																			interaction.type !== "scroll-complete" &&
+																			interaction.position &&
+																			interaction.size
+																	)
+																	.map((interaction) => (
+																		<div
+																			key={interaction.id}
+																			data-interaction-zone="true"
+																			onClick={(e) =>
+																				handleInteraction(interaction, e)
+																			}
+																			className={
+																				showZones
+																					? `assistance-zone-visible ${
+																							interaction.indicatorType || "box"
+																					  }-indicator`
+																					: "assistance-zone-hidden"
+																			}
+																			style={{
+																				position: "absolute",
+																				left: `${
+																					(interaction.position.x / 400) * 100
+																				}%`,
+																				top: `${
+																					(interaction.position.y / 800) * 100
+																				}%`,
+																				width: `${
+																					(interaction.size.width / 400) * 100
+																				}%`,
+																				height: `${
+																					(interaction.size.height / 800) * 100
+																				}%`,
+																				borderRadius:
+																					interaction.indicatorType === "circle"
+																						? "50%"
+																						: "8px",
+																				cursor: "pointer",
+																				zIndex: 10,
+																			}}
+																		/>
+																	))}
 
 															{/* Selection rectangle overlay */}
 															{isDragging && selectionRect && (
