@@ -8,7 +8,7 @@ import "./ControllerView.css";
 
 const ControllerView = () => {
 	// 🎯 DEBUG TOOL TOGGLE - Set to true to enable coordinate debugging
-	const ENABLE_DEBUG_TOOL = false;
+	const ENABLE_DEBUG_TOOL = true;
 
 	const {
 		demoState,
@@ -115,6 +115,15 @@ const ControllerView = () => {
 				return "/assets/screenshots/scenario2/12.5.png";
 			}
 		}
+		
+		// Handle scrollCompleteScreenAsset for any step that has it
+		if (
+			currentStep.scrollableReport?.scrollCompleteScreenAsset &&
+			scrollableReportState.isScrollComplete
+		) {
+			return currentStep.scrollableReport.scrollCompleteScreenAsset;
+		}
+		
 		return currentStep.screenAsset;
 	};
 
@@ -132,16 +141,23 @@ const ControllerView = () => {
 		const imgElement = reportImageRef.current;
 		const actualRenderedHeight =
 			imgElement.offsetHeight || imgElement.clientHeight;
-		const containerHeight = currentStep.scrollableReport.viewportBounds.height;
+		
+		// Get the viewport container element to measure its actual pixel height
+		const viewportContainer = imgElement.parentElement;
+		const actualContainerHeight = viewportContainer ? 
+			(viewportContainer.offsetHeight || viewportContainer.clientHeight) : 
+			currentStep.scrollableReport.viewportBounds.height;
 
 		console.log(
-			"Scroll calc - Rendered height:",
+			"Scroll calc - Image height:",
 			actualRenderedHeight,
 			"Container height:",
-			containerHeight
+			actualContainerHeight,
+			"Max scroll:",
+			Math.max(0, actualRenderedHeight - actualContainerHeight)
 		);
 
-		return Math.max(0, actualRenderedHeight - containerHeight);
+		return Math.max(0, actualRenderedHeight - actualContainerHeight);
 	};
 
 	// Mouse events for scrollable report
@@ -764,7 +780,7 @@ const ControllerView = () => {
 			<div
 				className="controller-view scenario-selector"
 				style={{
-					backgroundImage: "url(/assets/Background.png)",
+					backgroundImage: "url(/assets/scenarioBackground.png)",
 					backgroundSize: "cover",
 					backgroundPosition: "center",
 					backgroundRepeat: "no-repeat",
@@ -1190,6 +1206,18 @@ const ControllerView = () => {
 															/>
 
 															{/* Scrollable Report Overlay */}
+															{console.log(
+																"DEBUG: currentStep.scrollableReport:",
+																currentStep.scrollableReport
+															)}
+															{console.log(
+																"DEBUG: currentStep.id:",
+																currentStep.id
+															)}
+															{console.log(
+																"DEBUG: currentStep.layoutType:",
+																currentStep.layoutType
+															)}
 															{currentStep.scrollableReport && (
 																<div
 																	style={{
@@ -1197,25 +1225,33 @@ const ControllerView = () => {
 																		left: `${
 																			(currentStep.scrollableReport
 																				.viewportBounds.x /
-																				1200) *
+																				(currentStep.layoutType === "laptop"
+																					? 1200
+																					: 400)) *
 																			100
 																		}%`,
 																		top: `${
 																			(currentStep.scrollableReport
 																				.viewportBounds.y /
-																				675) *
+																				(currentStep.layoutType === "laptop"
+																					? 675
+																					: 800)) *
 																			100
 																		}%`,
 																		width: `${
 																			(currentStep.scrollableReport
 																				.viewportBounds.width /
-																				1200) *
+																				(currentStep.layoutType === "laptop"
+																					? 1200
+																					: 400)) *
 																			100
 																		}%`,
 																		height: `${
 																			(currentStep.scrollableReport
 																				.viewportBounds.height /
-																				675) *
+																				(currentStep.layoutType === "laptop"
+																					? 675
+																					: 800)) *
 																			100
 																		}%`,
 																		overflow: "hidden",
@@ -1224,6 +1260,7 @@ const ControllerView = () => {
 																			: "grab",
 																		willChange: "contents",
 																		contain: "layout",
+																		zIndex: 10,
 																	}}
 																	onMouseDown={handleReportMouseDown}
 																	onTouchStart={handleReportTouchStart}
@@ -1261,7 +1298,8 @@ const ControllerView = () => {
 															{/* Standard interaction button for step14 when scroll is complete - OUTSIDE scrollable container */}
 															{currentStep.id === "step14" &&
 																currentStep.scrollableReport &&
-																currentStep.scrollableReport.interactionButton &&
+																currentStep.scrollableReport
+																	.interactionButton &&
 																scrollableReportState.scrollProgress >= 0.8 && (
 																	<button
 																		className="interaction-button box-indicator assistance-zone-visible"
@@ -1278,10 +1316,30 @@ const ControllerView = () => {
 																		}}
 																		style={{
 																			position: "absolute",
-																			left: `${(currentStep.scrollableReport.interactionButton.position.x / 1400) * 100}%`,
-																			top: `${(currentStep.scrollableReport.interactionButton.position.y / 810) * 100}%`,
-																			width: `${(currentStep.scrollableReport.interactionButton.size.width / 1400) * 100}%`,
-																			height: `${(currentStep.scrollableReport.interactionButton.size.height / 810) * 100}%`,
+																			left: `${
+																				(currentStep.scrollableReport
+																					.interactionButton.position.x /
+																					1400) *
+																				100
+																			}%`,
+																			top: `${
+																				(currentStep.scrollableReport
+																					.interactionButton.position.y /
+																					810) *
+																				100
+																			}%`,
+																			width: `${
+																				(currentStep.scrollableReport
+																					.interactionButton.size.width /
+																					1400) *
+																				100
+																			}%`,
+																			height: `${
+																				(currentStep.scrollableReport
+																					.interactionButton.size.height /
+																					810) *
+																				100
+																			}%`,
 																			zIndex: 30,
 																		}}
 																	></button>
@@ -1367,6 +1425,7 @@ const ControllerView = () => {
 												</div>
 											</div>
 
+
 											{/* Right side - Screenshot */}
 											<div className="interaction-screenshot">
 												{currentStep.screenAsset && (
@@ -1394,6 +1453,113 @@ const ControllerView = () => {
 																	height: "auto",
 																}}
 															/>
+
+															{/* Scrollable Report Overlay for iPhone layout */}
+															{currentStep.scrollableReport && (
+																<div
+																	style={{
+																		position: "absolute",
+																		left: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.x /
+																				(currentStep.layoutType === "laptop" ? 1200 : 400)) *
+																			100
+																		}%`,
+																		top: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.y /
+																				(currentStep.layoutType === "laptop" ? 675 : 800)) *
+																			100
+																		}%`,
+																		width: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.width /
+																				(currentStep.layoutType === "laptop" ? 1200 : 400)) *
+																			100
+																		}%`,
+																		height: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.height /
+																				(currentStep.layoutType === "laptop" ? 675 : 800)) *
+																			100
+																		}%`,
+																		overflow: "hidden",
+																		cursor: scrollableReportState.isDragging
+																			? "grabbing"
+																			: "grab",
+																		willChange: "contents",
+																		contain: "layout",
+																		zIndex: 10,
+																	}}
+																	onMouseDown={handleReportMouseDown}
+																	onTouchStart={handleReportTouchStart}
+																>
+																	<img
+																		ref={reportImageRef}
+																		src={
+																			currentStep.scrollableReport.reportImage
+																		}
+																		alt="Scrollable Report"
+																		style={{
+																			position: "absolute",
+																			top: `-${scrollableReportState.scrollPosition}px`,
+																			left: 0,
+																			width: "100%",
+																			height: "auto",
+																			minHeight: "1600px",
+																			objectFit: "cover",
+																			objectPosition: "top center",
+																			pointerEvents: "none",
+																			userSelect: "none",
+																			willChange: "transform",
+																			transform: "translateZ(0)",
+																		}}
+																		onLoad={() => {
+																			console.log(
+																				"Report image loaded:",
+																				reportImageRef.current?.naturalHeight
+																			);
+																		}}
+																	/>
+																</div>
+															)}
+
+															{/* Interaction zone that appears after scroll is complete */}
+															{currentStep.scrollableReport && 
+																currentStep.scrollableReport.interactionButton && 
+																scrollableReportState.isScrollComplete && (
+																<div
+																	className={`assistance-zone-visible box-indicator`}
+																	onClick={(e) => {
+																		e.preventDefault();
+																		e.stopPropagation();
+																		const scrollCompleteInteraction = currentStep.interactions?.find(
+																			(interaction) => interaction.type === "scroll-complete"
+																		);
+																		if (scrollCompleteInteraction) {
+																			handleInteraction(scrollCompleteInteraction);
+																		}
+																	}}
+																	style={{
+																		position: "absolute",
+																		left: `${
+																			(currentStep.scrollableReport.interactionButton.position.x / 400) * 100
+																		}%`,
+																		top: `${
+																			(currentStep.scrollableReport.interactionButton.position.y / 800) * 100
+																		}%`,
+																		width: `${
+																			(currentStep.scrollableReport.interactionButton.size.width / 400) * 100
+																		}%`,
+																		height: `${
+																			(currentStep.scrollableReport.interactionButton.size.height / 800) * 100
+																		}%`,
+																		cursor: "pointer",
+																		zIndex: 15,
+																	}}
+																/>
+															)}
+
 															{currentStep.useImageMapper &&
 																currentStep.interactions
 																	?.filter(
