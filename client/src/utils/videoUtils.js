@@ -11,6 +11,9 @@ const CLOUD_VIDEO_URLS = {
 	'scenario3-video2': 'https://storage.googleapis.com/alliance-demo-bucket/Scenario3Video2.mp4',
 	'scenario4-video1': 'https://storage.googleapis.com/alliance-demo-bucket/Scenario4Video1.mp4',
 	'scenario4-video2': 'https://storage.googleapis.com/alliance-demo-bucket/Scenario4Video2.mp4',
+	'scenario5-video1': 'https://storage.googleapis.com/alliance-demo-bucket/Scenario5Video1.mp4',
+	'scenario5-video2': 'https://storage.googleapis.com/alliance-demo-bucket/Scenario5Video2.mp4',
+	'scenario5-video3': 'https://storage.googleapis.com/alliance-demo-bucket/Scenario5Video3.mp4',
 	// Add more cloud URLs as needed
 };
 
@@ -25,6 +28,9 @@ const LOCAL_VIDEO_URLS = {
 	'scenario3-video2': '/assets/videos/scenario3/Scenario3Video2.mp4',
 	'scenario4-video1': '/assets/videos/scenario4/1.mp4',
 	'scenario4-video2': '/assets/videos/scenario4/2.mp4',
+	'scenario5-video1': '/assets/videos/scenario5/1.mp4',
+	'scenario5-video2': '/assets/videos/scenario5/2.mp4',
+	'scenario5-video3': '/assets/videos/scenario5/3.mp4',
 	// Add more local URLs as needed
 };
 
@@ -109,4 +115,7 @@ export const VIDEO_KEYS = {
 	SCENARIO3_VIDEO2: 'scenario3-video2',
 	SCENARIO4_VIDEO1: 'scenario4-video1',
 	SCENARIO4_VIDEO2: 'scenario4-video2',
+	SCENARIO5_VIDEO1: 'scenario5-video1',
+	SCENARIO5_VIDEO2: 'scenario5-video2',
+	SCENARIO5_VIDEO3: 'scenario5-video3',
 };
