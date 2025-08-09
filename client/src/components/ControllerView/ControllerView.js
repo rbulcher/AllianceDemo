@@ -8,7 +8,7 @@ import "./ControllerView.css";
 
 const ControllerView = () => {
 	// 🎯 DEBUG TOOL TOGGLE - Set to true to enable coordinate debugging
-	const ENABLE_DEBUG_TOOL = true;
+	const ENABLE_DEBUG_TOOL = false;
 
 	const {
 		demoState,
@@ -115,7 +115,7 @@ const ControllerView = () => {
 				return "/assets/screenshots/scenario2/12.5.png";
 			}
 		}
-		
+
 		// Handle scrollCompleteScreenAsset for any step that has it
 		if (
 			currentStep.scrollableReport?.scrollCompleteScreenAsset &&
@@ -123,7 +123,7 @@ const ControllerView = () => {
 		) {
 			return currentStep.scrollableReport.scrollCompleteScreenAsset;
 		}
-		
+
 		return currentStep.screenAsset;
 	};
 
@@ -141,12 +141,12 @@ const ControllerView = () => {
 		const imgElement = reportImageRef.current;
 		const actualRenderedHeight =
 			imgElement.offsetHeight || imgElement.clientHeight;
-		
+
 		// Get the viewport container element to measure its actual pixel height
 		const viewportContainer = imgElement.parentElement;
-		const actualContainerHeight = viewportContainer ? 
-			(viewportContainer.offsetHeight || viewportContainer.clientHeight) : 
-			currentStep.scrollableReport.viewportBounds.height;
+		const actualContainerHeight = viewportContainer
+			? viewportContainer.offsetHeight || viewportContainer.clientHeight
+			: currentStep.scrollableReport.viewportBounds.height;
 
 		console.log(
 			"Scroll calc - Image height:",
@@ -1425,7 +1425,6 @@ const ControllerView = () => {
 												</div>
 											</div>
 
-
 											{/* Right side - Screenshot */}
 											<div className="interaction-screenshot">
 												{currentStep.screenAsset && (
@@ -1462,25 +1461,33 @@ const ControllerView = () => {
 																		left: `${
 																			(currentStep.scrollableReport
 																				.viewportBounds.x /
-																				(currentStep.layoutType === "laptop" ? 1200 : 400)) *
+																				(currentStep.layoutType === "laptop"
+																					? 1200
+																					: 400)) *
 																			100
 																		}%`,
 																		top: `${
 																			(currentStep.scrollableReport
 																				.viewportBounds.y /
-																				(currentStep.layoutType === "laptop" ? 675 : 800)) *
+																				(currentStep.layoutType === "laptop"
+																					? 675
+																					: 800)) *
 																			100
 																		}%`,
 																		width: `${
 																			(currentStep.scrollableReport
 																				.viewportBounds.width /
-																				(currentStep.layoutType === "laptop" ? 1200 : 400)) *
+																				(currentStep.layoutType === "laptop"
+																					? 1200
+																					: 400)) *
 																			100
 																		}%`,
 																		height: `${
 																			(currentStep.scrollableReport
 																				.viewportBounds.height /
-																				(currentStep.layoutType === "laptop" ? 675 : 800)) *
+																				(currentStep.layoutType === "laptop"
+																					? 675
+																					: 800)) *
 																			100
 																		}%`,
 																		overflow: "hidden",
@@ -1525,40 +1532,58 @@ const ControllerView = () => {
 															)}
 
 															{/* Interaction zone that appears after scroll is complete */}
-															{currentStep.scrollableReport && 
-																currentStep.scrollableReport.interactionButton && 
+															{currentStep.scrollableReport &&
+																currentStep.scrollableReport
+																	.interactionButton &&
 																scrollableReportState.isScrollComplete && (
-																<div
-																	className={`assistance-zone-visible box-indicator`}
-																	onClick={(e) => {
-																		e.preventDefault();
-																		e.stopPropagation();
-																		const scrollCompleteInteraction = currentStep.interactions?.find(
-																			(interaction) => interaction.type === "scroll-complete"
-																		);
-																		if (scrollCompleteInteraction) {
-																			handleInteraction(scrollCompleteInteraction);
-																		}
-																	}}
-																	style={{
-																		position: "absolute",
-																		left: `${
-																			(currentStep.scrollableReport.interactionButton.position.x / 400) * 100
-																		}%`,
-																		top: `${
-																			(currentStep.scrollableReport.interactionButton.position.y / 800) * 100
-																		}%`,
-																		width: `${
-																			(currentStep.scrollableReport.interactionButton.size.width / 400) * 100
-																		}%`,
-																		height: `${
-																			(currentStep.scrollableReport.interactionButton.size.height / 800) * 100
-																		}%`,
-																		cursor: "pointer",
-																		zIndex: 15,
-																	}}
-																/>
-															)}
+																	<div
+																		className={`assistance-zone-visible box-indicator`}
+																		onClick={(e) => {
+																			e.preventDefault();
+																			e.stopPropagation();
+																			const scrollCompleteInteraction =
+																				currentStep.interactions?.find(
+																					(interaction) =>
+																						interaction.type ===
+																						"scroll-complete"
+																				);
+																			if (scrollCompleteInteraction) {
+																				handleInteraction(
+																					scrollCompleteInteraction
+																				);
+																			}
+																		}}
+																		style={{
+																			position: "absolute",
+																			left: `${
+																				(currentStep.scrollableReport
+																					.interactionButton.position.x /
+																					400) *
+																				100
+																			}%`,
+																			top: `${
+																				(currentStep.scrollableReport
+																					.interactionButton.position.y /
+																					800) *
+																				100
+																			}%`,
+																			width: `${
+																				(currentStep.scrollableReport
+																					.interactionButton.size.width /
+																					400) *
+																				100
+																			}%`,
+																			height: `${
+																				(currentStep.scrollableReport
+																					.interactionButton.size.height /
+																					800) *
+																				100
+																			}%`,
+																			cursor: "pointer",
+																			zIndex: 15,
+																		}}
+																	/>
+																)}
 
 															{currentStep.useImageMapper &&
 																currentStep.interactions

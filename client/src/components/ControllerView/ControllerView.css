@@ -351,6 +351,7 @@
   box-shadow: 0 6px 20px rgba(233, 81, 26, 0.3);
   margin-top: 3rem;
   min-width: 350px;
+  white-space: nowrap;
   /* Default state: always start hidden */
   transform: translateY(30px);
   opacity: 0;
