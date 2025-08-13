@@ -10,7 +10,7 @@ import "./ControllerView.css";
 
 const ControllerView = () => {
 	// 🎯 DEBUG TOOL TOGGLE - Set to true to enable coordinate debugging
-	const ENABLE_DEBUG_TOOL = false;
+	const ENABLE_DEBUG_TOOL = true;
 
 	const {
 		demoState,
@@ -1570,7 +1570,7 @@ const ControllerView = () => {
 																					opacity: "1", // Force visibility
 																					display: "block", // Force display
 																					minWidth: "200px", // Force minimum size
-																					minHeight: "1900px", // Force minimum size
+																					minHeight: "1940px", // Force minimum size
 																				}),
 																			}}
 																			onLoad={() => {
