@@ -44,6 +44,10 @@ const ControllerView = () => {
 		scrollProgress: 0,
 		isScrollComplete: false,
 	});
+	const [scenario6Step14State, setScenario6Step14State] = useState({
+		showSecondImage: false,
+		startAnimation: false,
+	});
 	const pulseTimerRef = useRef(null);
 	const phoneScreenRef = useRef(null);
 	const continueButtonTriggeredRef = useRef(false);
@@ -106,6 +110,15 @@ const ControllerView = () => {
 
 	// Get the appropriate screen asset based on scroll progress
 	const getScreenAsset = () => {
+		// Custom logic for scenario6 step14 - always show base image 12.png
+		// The 12.5.png overlay will be handled separately for animation
+		if (
+			currentStep.id === "step14" &&
+			currentStep.screenAsset === "/assets/screenshots/scenario6/12.png"
+		) {
+			return "/assets/screenshots/scenario6/12.png";
+		}
+
 		if (
 			currentStep.id === "step14" &&
 			currentStep.screenAsset === "/assets/screenshots/scenario2/12.png"
@@ -228,6 +241,52 @@ const ControllerView = () => {
 						console.log("🆕 NEW STEP - Resetting video flag for:", step.id);
 						videoHasStartedRef.current = false;
 						setVideoManuallyStarted(false); // Reset manual video start flag
+
+						// Reset scenario6 step14 state for new step
+						setScenario6Step14State({
+							showSecondImage: false,
+							startAnimation: false,
+						});
+
+						// Custom logic for scenario6 step14 - trigger image transition with immediate timing
+						if (
+							step.id === "step14" &&
+							step.screenAsset === "/assets/screenshots/scenario6/12.png"
+						) {
+							// Start animation immediately - no delay to see base chart
+							setTimeout(() => {
+								// First show the overlay image (but still hidden with CSS)
+								setScenario6Step14State({
+									showSecondImage: true,
+									startAnimation: false,
+								});
+
+								// Then trigger the animation immediately
+								setTimeout(() => {
+									setScenario6Step14State({
+										showSecondImage: true,
+										startAnimation: true,
+									});
+								}, 50); // Minimal delay just for state update
+							}, 200); // Brief delay to ensure base image is loaded
+
+							// Hardcoded auto-advance for scenario6 step14 only - advance faster after animation
+							setTimeout(() => {
+								if (
+									currentScenario?.id === "scenario6" &&
+									step.id === "step14"
+								) {
+									console.log(
+										"🚀 Scenario6 Step14: Auto-advancing to step15 after animation"
+									);
+									handleInteraction({
+										id: "auto-advance-step14",
+										action: "next-step",
+									});
+								}
+							}, 4000); // 4 seconds total wait time (much faster)
+						}
+
 						// Reset scrollable report state for new step
 						setScrollableReportState({
 							scrollPosition: 0,
@@ -786,15 +845,9 @@ const ControllerView = () => {
 					backgroundRepeat: "no-repeat",
 				}}
 			>
-				<div className="header">
+				<div className="header" style={{ marginTop: "60px" }}>
 					<h1>Explore Insights to make your laundromat easier</h1>
-					<div className="connection-status">
-						{isConnected ? (
-							<span className="connected">🟢 Connected</span>
-						) : (
-							<span className="disconnected">🔴 Connecting...</span>
-						)}
-					</div>
+
 					{/* Reset Menu Button */}
 					<button
 						className="reset-menu-button"
@@ -1049,23 +1102,91 @@ const ControllerView = () => {
 						<div className="step-content">
 							{/* Controller Message Step */}
 							{currentStep.type === "controller-message" && (
-								<div className="controller-message-step relative-wrapper">
+								<div
+									className={`controller-message-step relative-wrapper ${
+										currentStep.layoutType === "laptop" ? "laptop-layout" : ""
+									}`}
+								>
 									{currentStep.screenAsset ? (
-										<div className="interaction-layout">
-											<div className="interaction-text">
-												<div className="step-header">
-													<h2>{currentStep.title}</h2>
+										currentStep.layoutType === "laptop" ? (
+											// Laptop layout for controller-message with screenAsset
+											<div className="laptop-interaction-layout">
+												<div className="laptop-interaction-header">
+													<div className="step-header">
+														<h2>{currentStep.title}</h2>
+														<p className="step-description">
+															{currentStep.description}
+														</p>
+													</div>
 												</div>
-												<div className="step-description">
-													{currentStep.description}
+												<div className="laptop-screenshot-section">
+													<div
+														className="laptop-screenshot-container"
+														style={{ position: "relative" }}
+													>
+														<img
+															src={getScreenAsset()}
+															alt={currentStep.title}
+															style={{
+																position: "absolute",
+																top: 0,
+																left: 0,
+																width: "100%",
+																height: "100%",
+																objectFit: "contain",
+																display: "block",
+															}}
+														/>
+
+														{/* Scenario6 Step14 Overlay Image - shows bar graph growth animation */}
+														{currentStep.id === "step14" &&
+															currentStep.screenAsset ===
+																"/assets/screenshots/scenario6/12.png" &&
+															scenario6Step14State.showSecondImage && (
+																<img
+																	src="/assets/screenshots/scenario6/12.5.png"
+																	alt="Updated bar graph with growth"
+																	className={`scenario6-step14-overlay ${
+																		scenario6Step14State.startAnimation
+																			? "reveal-up"
+																			: ""
+																	}`}
+																	style={{
+																		position: "absolute",
+																		top: 0,
+																		left: 0,
+																		width: "100%",
+																		height: "100%",
+																		objectFit: "contain",
+																		pointerEvents: "none",
+																		zIndex: 5,
+																	}}
+																/>
+															)}
+													</div>
 												</div>
 											</div>
-											<div className="interaction-screenshot">
-												<div className="screen-asset">
-													<img src={getScreenAsset()} alt={currentStep.title} />
+										) : (
+											// Original phone layout for controller-message
+											<div className="interaction-layout">
+												<div className="interaction-text">
+													<div className="step-header">
+														<h2>{currentStep.title}</h2>
+													</div>
+													<div className="step-description">
+														{currentStep.description}
+													</div>
+												</div>
+												<div className="interaction-screenshot">
+													<div className="screen-asset">
+														<img
+															src={getScreenAsset()}
+															alt={currentStep.title}
+														/>
+													</div>
 												</div>
 											</div>
-										</div>
+										)
 									) : (
 										<div className="step-header">
 											<div className="highlight-text">{currentStep.title}</div>
@@ -1193,6 +1314,13 @@ const ControllerView = () => {
 															<img
 																src={getScreenAsset()}
 																alt={currentStep.title}
+																className={
+																	currentStep.id === "step14" &&
+																	currentStep.screenAsset ===
+																		"/assets/screenshots/scenario6/12.png"
+																		? "scenario6-step14-image fade-transition"
+																		: ""
+																}
 																onLoad={() => setImageLoaded(true)}
 																onError={(e) => {
 																	e.target.style.display = "none";
@@ -1205,19 +1333,33 @@ const ControllerView = () => {
 																}}
 															/>
 
+															{/* Scenario6 Step14 Overlay Image - shows bar graph growth animation */}
+															{currentStep.id === "step14" &&
+																currentStep.screenAsset ===
+																	"/assets/screenshots/scenario6/12.png" &&
+																scenario6Step14State.showSecondImage && (
+																	<img
+																		src="/assets/screenshots/scenario6/12.5.png"
+																		alt="Updated bar graph with growth"
+																		className={`scenario6-step14-overlay ${
+																			scenario6Step14State.startAnimation
+																				? "reveal-up"
+																				: ""
+																		}`}
+																		style={{
+																			position: "absolute",
+																			top: 0,
+																			left: 0,
+																			width: "100%",
+																			height: "100%",
+																			objectFit: "contain",
+																			pointerEvents: "none",
+																			zIndex: 5,
+																		}}
+																	/>
+																)}
+
 															{/* Scrollable Report Overlay */}
-															{console.log(
-																"DEBUG: currentStep.scrollableReport:",
-																currentStep.scrollableReport
-															)}
-															{console.log(
-																"DEBUG: currentStep.id:",
-																currentStep.id
-															)}
-															{console.log(
-																"DEBUG: currentStep.layoutType:",
-																currentStep.layoutType
-															)}
 															{currentStep.scrollableReport && (
 																<div
 																	style={{
@@ -1441,6 +1583,13 @@ const ControllerView = () => {
 															<img
 																src={getScreenAsset()}
 																alt={currentStep.title}
+																className={
+																	currentStep.id === "step14" &&
+																	currentStep.screenAsset ===
+																		"/assets/screenshots/scenario6/12.png"
+																		? "scenario6-step14-image fade-transition"
+																		: ""
+																}
 																onLoad={() => setImageLoaded(true)}
 																onError={(e) => {
 																	e.target.style.display = "none";
@@ -1452,6 +1601,32 @@ const ControllerView = () => {
 																	height: "auto",
 																}}
 															/>
+
+															{/* Scenario6 Step14 Overlay Image - phone layout - shows bar graph growth animation */}
+															{currentStep.id === "step14" &&
+																currentStep.screenAsset ===
+																	"/assets/screenshots/scenario6/12.png" &&
+																scenario6Step14State.showSecondImage && (
+																	<img
+																		src="/assets/screenshots/scenario6/12.5.png"
+																		alt="Updated bar graph with growth"
+																		className={`scenario6-step14-overlay ${
+																			scenario6Step14State.startAnimation
+																				? "reveal-up"
+																				: ""
+																		}`}
+																		style={{
+																			position: "absolute",
+																			top: 0,
+																			left: 0,
+																			width: "100%",
+																			height: "100%",
+																			objectFit: "contain",
+																			pointerEvents: "none",
+																			zIndex: 5,
+																		}}
+																	/>
+																)}
 
 															{/* Scrollable Report Overlay for iPhone layout */}
 															{currentStep.scrollableReport && (

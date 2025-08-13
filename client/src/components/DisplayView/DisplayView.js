@@ -311,7 +311,15 @@ const DisplayView = () => {
 
 	if (!currentScenario) {
 		return (
-			<div className="display-view standby">
+			<div
+				className="display-view standby"
+				style={{
+					backgroundImage: "url(/assets/scenarioBackground.png)",
+					backgroundSize: "cover",
+					backgroundPosition: "center",
+					backgroundRepeat: "no-repeat",
+				}}
+			>
 				<div className="standby-screen">
 					<div className="alliance-logo">
 						<h1>Alliance Commercial Laundry</h1>

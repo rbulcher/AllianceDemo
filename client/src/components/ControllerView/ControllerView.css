@@ -201,18 +201,18 @@
 }
 
 .laptop-interaction-header .step-header h2 {
-  font-size: 7rem;
-  margin: 0 0 2.5rem 0;
+  font-size: 1.8rem;
+  margin: 0 0 0.5rem 0;
   color: #e9511a;
   font-weight: bold;
   line-height: 1.1;
 }
 
 .laptop-interaction-header .step-description {
-  font-size: 4rem;
+  font-size: 1.5rem;
   color: #4a4a4a;
   line-height: 1.3;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   margin: 0;
   font-weight: 500;
 }
@@ -881,6 +881,17 @@
   border-left: 3px solid #00ff00;
 }
 
+/* Bottom-up reveal animation for scenario6 step14 - creates bar graph growth effect */
+.scenario6-step14-overlay {
+  clip-path: inset(100% 0 0 0);
+  transition: clip-path 20s cubic-bezier(0.23, 1, 0.32, 1);
+  opacity: 1;
+}
+
+.scenario6-step14-overlay.reveal-up {
+  clip-path: inset(0% 0 0 0);
+}
+
 /* Invisible admin reset button in bottom right */
 .admin-reset-button {
   position: fixed;
@@ -962,12 +973,12 @@
   
   /* Laptop Layout responsive adjustments */
   .laptop-interaction-header .step-header h2 {
-    font-size: 5.5rem;
-    margin: 3.5rem 0 2rem 0;
+    font-size: 4.2rem;
+    margin: 0 0 0.8rem 0;
   }
   
   .laptop-interaction-header .step-description {
-    font-size: 3.5rem;
+    font-size: 3rem;
   }
   
   .laptop-interaction-layout {
@@ -1052,12 +1063,12 @@
   
   /* Laptop Layout adjustments for smaller screens */
   .laptop-interaction-header .step-header h2 {
-    font-size: 4.5rem;
-    margin: 0 0 1.5rem 0;
+    font-size: 1.4rem;
+    margin: 0 0 0.4rem 0;
   }
   
   .laptop-interaction-header .step-description {
-    font-size: 2.8rem;
+    font-size: 1.2rem;
   }
   
   .laptop-interaction-layout {

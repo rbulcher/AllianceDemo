@@ -12,19 +12,32 @@
   justify-content: center;
   align-items: center;
   text-align: center;
+  /* Optimize for 16:9 TV display */
+  min-height: 100vh;
+  width: 100vw;
 }
 
 .connection-message,
 .standby-screen {
-  max-width: 800px;
-  padding: 3rem;
+  max-width: 1400px;
+  width: 100%;
+  padding: 4rem 2rem;
+  /* Optimize vertical spacing for TV aspect ratio */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 70vh;
 }
 
 .connection-message h1,
 .alliance-logo h1 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  color: #e9511a;
+  font-weight: 700;
+  text-shadow: none;
+  letter-spacing: -1px;
+  line-height: 1;
 }
 
 .alliance-logo {
@@ -32,19 +45,32 @@
 }
 
 .alliance-logo p {
-  font-size: 1.5rem;
-  opacity: 0.8;
+  font-size: 2.5rem;
+  color: #4a4a4a;
+  font-weight: 600;
+  opacity: 1;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.5px;
 }
 
 .standby-message h2 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  color: #3498db;
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  color: #e9511a;
+  font-weight: 700;
+  text-shadow: none;
+  letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 .standby-message p {
-  font-size: 1.2rem;
-  opacity: 0.9;
+  font-size: 2rem;
+  color: #4a4a4a;
+  font-weight: 600;
+  opacity: 1;
+  line-height: 1.3;
+  letter-spacing: 0.3px;
+  margin-bottom: 0;
 }
 
 .display-header {
@@ -599,6 +625,50 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* TV Display Optimizations for larger screens */
+@media (min-width: 1920px) {
+  .alliance-logo h1 {
+    font-size: 6rem;
+  }
+  
+  .alliance-logo p {
+    font-size: 3rem;
+  }
+  
+  .standby-message h2 {
+    font-size: 5rem;
+  }
+  
+  .standby-message p {
+    font-size: 2.5rem;
+  }
+  
+  .standby-screen {
+    min-height: 80vh;
+    padding: 6rem 3rem;
+  }
+}
+
+/* Ultra-wide TV displays (4K+) */
+@media (min-width: 2560px) {
+  .alliance-logo h1 {
+    font-size: 7rem;
+  }
+  
+  .alliance-logo p {
+    font-size: 3.5rem;
+  }
+  
+  .standby-message h2 {
+    font-size: 6rem;
+  }
+  
+  .standby-message p {
+    font-size: 3rem;
+  }
+}
+
 
 /* Responsive design for different screen sizes */
 @media (max-width: 768px) {
