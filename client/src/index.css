@@ -1,12 +1,18 @@
 /* Global Styles for Alliance Demo */
 
-/* Local Montserrat Font Declarations */
+/* Local Montserrat @font-face {
+  font-family: 'Montserrat';
+  src: url('./assets/fonts/Montserrat-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: block;
+}clarations */
 @font-face {
   font-family: 'Montserrat';
   src: url('./assets/fonts/Montserrat-Light.ttf') format('truetype');
   font-weight: 300;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -14,7 +20,7 @@
   src: url('./assets/fonts/Montserrat-LightItalic.ttf') format('truetype');
   font-weight: 300;
   font-style: italic;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -22,7 +28,7 @@
   src: url('./assets/fonts/Montserrat-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: fallback;
 }
 
 @font-face {
@@ -30,7 +36,7 @@
   src: url('./assets/fonts/Montserrat-Italic.ttf') format('truetype');
   font-weight: 400;
   font-style: italic;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -38,7 +44,7 @@
   src: url('./assets/fonts/Montserrat-Medium.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -46,7 +52,7 @@
   src: url('./assets/fonts/Montserrat-MediumItalic.ttf') format('truetype');
   font-weight: 500;
   font-style: italic;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -54,7 +60,7 @@
   src: url('./assets/fonts/Montserrat-SemiBold.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;
-  font-display: swap;
+  font-display: fallback;
 }
 
 @font-face {
@@ -62,7 +68,7 @@
   src: url('./assets/fonts/Montserrat-SemiBoldItalic.ttf') format('truetype');
   font-weight: 600;
   font-style: italic;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -70,7 +76,7 @@
   src: url('./assets/fonts/Montserrat-Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
-  font-display: swap;
+  font-display: fallback;
 }
 * {
   margin: 0;
