@@ -1,4 +1,5 @@
 // Video URL utilities for handling local vs cloud storage
+import cacheBuster from './cacheBuster';
 
 // Cloud storage URLs for online demo
 const CLOUD_VIDEO_URLS = {
@@ -78,24 +79,26 @@ export const shouldUseCloudStorage = () => {
 /**
  * Gets the appropriate video URL based on environment
  * @param {string} videoKey - The video identifier (e.g., 'scenario1-video1')
- * @returns {string} The video URL
+ * @returns {string} The video URL with cache busting applied
  */
 export const getVideoUrl = (videoKey) => {
 	const useCloud = shouldUseCloudStorage();
+	let baseUrl;
 
 	if (useCloud && CLOUD_VIDEO_URLS[videoKey]) {
 		console.log(`🌥️ Using cloud storage for video: ${videoKey}`);
-		return CLOUD_VIDEO_URLS[videoKey];
-	}
-
-	if (LOCAL_VIDEO_URLS[videoKey]) {
+		baseUrl = CLOUD_VIDEO_URLS[videoKey];
+	} else if (LOCAL_VIDEO_URLS[videoKey]) {
 		console.log(`💻 Using local storage for video: ${videoKey}`);
-		return LOCAL_VIDEO_URLS[videoKey];
+		baseUrl = LOCAL_VIDEO_URLS[videoKey];
+	} else {
+		// Fallback to the local URL if key not found
+		console.warn(`⚠️ Video key not found: ${videoKey}, falling back to local`);
+		baseUrl = LOCAL_VIDEO_URLS[videoKey] || `/assets/videos/${videoKey}.mp4`;
 	}
 
-	// Fallback to the local URL if key not found
-	console.warn(`⚠️ Video key not found: ${videoKey}, falling back to local`);
-	return LOCAL_VIDEO_URLS[videoKey] || `/assets/videos/${videoKey}.mp4`;
+	// Add cache busting to the URL
+	return cacheBuster.addCacheBuster(baseUrl);
 };
 
 /**

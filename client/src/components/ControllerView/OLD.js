@@ -4,8 +4,6 @@ import { useSocket } from "../../hooks/useSocket";
 import { getScenario, getAllScenarios } from "../../data/scenarios";
 import { resolveVideoAsset } from "../../utils/videoUtils";
 import audioFeedback from "../../utils/audioFeedback";
-import imagePreloader from "../../utils/imagePreloader";
-import cacheBuster from "../../utils/cacheBuster";
 import "./ControllerView.css";
 
 const ControllerView = () => {
@@ -46,27 +44,12 @@ const ControllerView = () => {
 		scrollProgress: 0,
 		isScrollComplete: false,
 	});
-	const [scenario6Step14State, setScenario6Step14State] = useState({
-		showSecondImage: false,
-		startAnimation: false,
-	});
-	const [isPreloading, setIsPreloading] = useState(false);
-	const [preloadComplete, setPreloadComplete] = useState(false);
 	const pulseTimerRef = useRef(null);
 	const phoneScreenRef = useRef(null);
 	const continueButtonTriggeredRef = useRef(false);
 	const videoHasStartedRef = useRef(false);
 	const continueButtonTimerRef = useRef(null);
 	const reportImageRef = useRef(null);
-
-	// Initialize cache busting on component mount
-	useEffect(() => {
-		// Check for new deployment version on app start
-		const newDeployment = cacheBuster.checkDeploymentVersion();
-		if (newDeployment) {
-			console.log("🚀 New deployment detected, cache bust applied");
-		}
-	}, []);
 
 	// Use button positions and sizes directly from scenarios without scaling
 	const getButtonProps = (interaction) => {
@@ -123,15 +106,6 @@ const ControllerView = () => {
 
 	// Get the appropriate screen asset based on scroll progress
 	const getScreenAsset = () => {
-		// Custom logic for scenario6 step14 - always show base image 12.png
-		// The 12.5.png overlay will be handled separately for animation
-		if (
-			currentStep.id === "step14" &&
-			currentStep.screenAsset === "/assets/screenshots/scenario6/12.png"
-		) {
-			return "/assets/screenshots/scenario6/12.png";
-		}
-
 		if (
 			currentStep.id === "step14" &&
 			currentStep.screenAsset === "/assets/screenshots/scenario2/12.png"
@@ -141,15 +115,6 @@ const ControllerView = () => {
 				return "/assets/screenshots/scenario2/12.5.png";
 			}
 		}
-
-		// Handle scrollCompleteScreenAsset for any step that has it
-		if (
-			currentStep.scrollableReport?.scrollCompleteScreenAsset &&
-			scrollableReportState.isScrollComplete
-		) {
-			return currentStep.scrollableReport.scrollCompleteScreenAsset;
-		}
-
 		return currentStep.screenAsset;
 	};
 
@@ -173,9 +138,7 @@ const ControllerView = () => {
 			"Scroll calc - Rendered height:",
 			actualRenderedHeight,
 			"Container height:",
-			containerHeight,
-			"Max scroll:",
-			Math.max(0, actualRenderedHeight - containerHeight)
+			containerHeight
 		);
 
 		return Math.max(0, actualRenderedHeight - containerHeight);
@@ -223,31 +186,10 @@ const ControllerView = () => {
 		}
 	};
 
-	// Preload images when scenario starts
 	useEffect(() => {
 		if (demoState.currentScenario) {
 			const scenario = getScenario(demoState.currentScenario);
 			setCurrentScenario(scenario);
-
-			// Start preloading all scenario images immediately
-			if (scenario && !preloadComplete) {
-				console.log(`🎬 Starting preload for ${scenario.title}`);
-				setIsPreloading(true);
-				setPreloadComplete(false);
-
-				imagePreloader
-					.preloadScenario(scenario)
-					.then(() => {
-						console.log(`✅ Preload complete for ${scenario.title}`);
-						setPreloadComplete(true);
-						setIsPreloading(false);
-					})
-					.catch((error) => {
-						console.error(`❌ Preload failed for ${scenario.title}:`, error);
-						setPreloadComplete(true); // Continue anyway
-						setIsPreloading(false);
-					});
-			}
 
 			if (scenario && scenario.steps && scenario.steps.length > 0) {
 				const stepIndex = Math.min(
@@ -257,8 +199,8 @@ const ControllerView = () => {
 				const step = scenario.steps[stepIndex];
 				if (step) {
 					setCurrentStep(step);
-					// Don't show zones immediately - wait for image to load
-					setShowZones(false);
+					// Show zones permanently for image mapper steps
+					setShowZones(step.useImageMapper || false);
 					// Show mouse coordinates for image mapper steps (only if debug tool is enabled)
 					setShowMouseCoords(
 						(step.useImageMapper || false) && ENABLE_DEBUG_TOOL
@@ -270,52 +212,6 @@ const ControllerView = () => {
 						console.log("🆕 NEW STEP - Resetting video flag for:", step.id);
 						videoHasStartedRef.current = false;
 						setVideoManuallyStarted(false); // Reset manual video start flag
-
-						// Reset scenario6 step14 state for new step
-						setScenario6Step14State({
-							showSecondImage: false,
-							startAnimation: false,
-						});
-
-						// Custom logic for scenario6 step14 - trigger image transition with immediate timing
-						if (
-							step.id === "step14" &&
-							step.screenAsset === "/assets/screenshots/scenario6/12.png"
-						) {
-							// Start animation immediately - no delay to see base chart
-							setTimeout(() => {
-								// First show the overlay image (but still hidden with CSS)
-								setScenario6Step14State({
-									showSecondImage: true,
-									startAnimation: false,
-								});
-
-								// Then trigger the animation immediately
-								setTimeout(() => {
-									setScenario6Step14State({
-										showSecondImage: true,
-										startAnimation: true,
-									});
-								}, 50); // Minimal delay just for state update
-							}, 200); // Brief delay to ensure base image is loaded
-
-							// Hardcoded auto-advance for scenario6 step14 only - advance faster after animation
-							setTimeout(() => {
-								if (
-									currentScenario?.id === "scenario6" &&
-									step.id === "step14"
-								) {
-									console.log(
-										"🚀 Scenario6 Step14: Auto-advancing to step15 after animation"
-									);
-									handleInteraction({
-										id: "auto-advance-step14",
-										action: "next-step",
-									});
-								}
-							}, 4000); // 4 seconds total wait time (much faster)
-						}
-
 						// Reset scrollable report state for new step
 						setScrollableReportState({
 							scrollPosition: 0,
@@ -326,19 +222,7 @@ const ControllerView = () => {
 						});
 						// Only reset imageLoaded for steps that actually have images
 						if (step.screenAsset) {
-							// If image is already preloaded, mark as loaded immediately
-							if (
-								preloadComplete &&
-								imagePreloader.isPreloaded(step.screenAsset)
-							) {
-								console.log(
-									"Image already preloaded, marking as loaded:",
-									step.id
-								);
-								setImageLoaded(true);
-							} else {
-								setImageLoaded(false); // Reset image loaded state for new step
-							}
+							setImageLoaded(false); // Reset image loaded state for new step
 						}
 					}
 
@@ -539,28 +423,6 @@ const ControllerView = () => {
 			return () => clearTimeout(timer);
 		}
 	}, [currentStep, demoState.currentScenario]);
-
-	// Show interaction zones based on image load status and preload status
-	useEffect(() => {
-		const shouldShowZones =
-			currentStep?.useImageMapper &&
-			(imageLoaded ||
-				(preloadComplete &&
-					imagePreloader.isPreloaded(currentStep?.screenAsset)));
-
-		if (shouldShowZones) {
-			console.log("Showing interaction zones for:", currentStep.id, {
-				imageLoaded,
-				preloadComplete,
-				isPreloaded: imagePreloader.isPreloaded(currentStep?.screenAsset),
-			});
-			setShowZones(true);
-		} else if (!currentStep?.useImageMapper) {
-			setShowZones(false);
-		} else {
-			setShowZones(false);
-		}
-	}, [imageLoaded, currentStep, preloadComplete]);
 
 	// Debug: Track showZones changes
 	useEffect(() => {
@@ -820,11 +682,6 @@ const ControllerView = () => {
 		await audioFeedback.init();
 		audioFeedback.playTap();
 
-		// Clear preloader cache when going back to scenarios
-		imagePreloader.clear();
-		setIsPreloading(false);
-		setPreloadComplete(false);
-
 		// Mark scenario as completed if it finished successfully
 		if (scenarioCompleted && currentScenario) {
 			console.log("Marking scenario as completed:", currentScenario.id);
@@ -864,19 +721,7 @@ const ControllerView = () => {
 		await audioFeedback.init();
 		audioFeedback.playTap();
 
-		console.log(
-			"🔄 Reset Menu: Performing FULL cache bust (including code)..."
-		);
-
-		// Perform full cache bust - this will reload the page
-		await cacheBuster.fullCacheBust();
-
-		// Note: Code below won't execute because fullCacheBust() reloads the page
-		// But keeping it for safety in case reload fails
-		imagePreloader.clear();
 		setCompletedScenarios(new Set());
-		setIsPreloading(false);
-		setPreloadComplete(false);
 		adminReset();
 		setCurrentScenario(null);
 		setCurrentStep(null);
@@ -916,15 +761,29 @@ const ControllerView = () => {
 		const scenarios = getAllScenarios();
 
 		return (
-			<div className="controller-view scenario-selector">
-				<div className="header" style={{ marginTop: "60px" }}>
+			<div
+				className="controller-view scenario-selector"
+				style={{
+					backgroundImage: "url(/assets/Background.png)",
+					backgroundSize: "cover",
+					backgroundPosition: "center",
+					backgroundRepeat: "no-repeat",
+				}}
+			>
+				<div className="header">
 					<h1>Explore Insights to make your laundromat easier</h1>
-
-					{/* Reset Menu Button - Admin only */}
+					<div className="connection-status">
+						{isConnected ? (
+							<span className="connected">🟢 Connected</span>
+						) : (
+							<span className="disconnected">🔴 Connecting...</span>
+						)}
+					</div>
+					{/* Reset Menu Button */}
 					<button
 						className="reset-menu-button"
 						onClick={handleResetMenu}
-						title="Admin: Reset menu and clear all caches"
+						title="Reset Menu"
 					>
 						Reset Menu
 					</button>
@@ -1174,96 +1033,23 @@ const ControllerView = () => {
 						<div className="step-content">
 							{/* Controller Message Step */}
 							{currentStep.type === "controller-message" && (
-								<div
-									className={`controller-message-step relative-wrapper ${
-										currentStep.layoutType === "laptop" ? "laptop-layout" : ""
-									}`}
-								>
+								<div className="controller-message-step relative-wrapper">
 									{currentStep.screenAsset ? (
-										currentStep.layoutType === "laptop" ? (
-											// Laptop layout for controller-message with screenAsset
-											<div className="laptop-interaction-layout">
-												<div className="laptop-interaction-header">
-													<div className="step-header">
-														<h2>{currentStep.title}</h2>
-														<p className="step-description">
-															{currentStep.description}
-														</p>
-													</div>
+										<div className="interaction-layout">
+											<div className="interaction-text">
+												<div className="step-header">
+													<h2>{currentStep.title}</h2>
 												</div>
-												<div className="laptop-screenshot-section">
-													<div
-														className="laptop-screenshot-container"
-														style={{ position: "relative" }}
-													>
-														<img
-															src={cacheBuster.addCacheBuster(getScreenAsset())}
-															alt={currentStep.title}
-															className={imageLoaded ? "loaded" : ""}
-															onLoad={() => setImageLoaded(true)}
-															onError={() => setImageLoaded(true)}
-															style={{
-																position: "absolute",
-																top: 0,
-																left: 0,
-																width: "100%",
-																height: "100%",
-																objectFit: "contain",
-																display: "block",
-															}}
-														/>
-
-														{/* Scenario6 Step14 Overlay Image - shows bar graph growth animation */}
-														{currentStep.id === "step14" &&
-															currentStep.screenAsset ===
-																"/assets/screenshots/scenario6/12.png" &&
-															scenario6Step14State.showSecondImage && (
-																<img
-																	src={cacheBuster.addCacheBuster(
-																		"/assets/screenshots/scenario6/12.5.png"
-																	)}
-																	alt="Updated bar graph with growth"
-																	className={`scenario6-step14-overlay ${
-																		scenario6Step14State.startAnimation
-																			? "reveal-up"
-																			: ""
-																	}`}
-																	style={{
-																		position: "absolute",
-																		top: 0,
-																		left: 0,
-																		width: "100%",
-																		height: "100%",
-																		objectFit: "contain",
-																		pointerEvents: "none",
-																		zIndex: 5,
-																	}}
-																/>
-															)}
-													</div>
+												<div className="step-description">
+													{currentStep.description}
 												</div>
 											</div>
-										) : (
-											// Original phone layout for controller-message
-											<div className="interaction-layout">
-												<div className="interaction-text">
-													<div className="step-header">
-														<h2>{currentStep.title}</h2>
-													</div>
-													<div className="step-description">
-														{currentStep.description}
-													</div>
-												</div>
-												<div className="interaction-screenshot">
-													<div className="screen-asset">
-														<img
-															src={getScreenAsset()}
-															alt={currentStep.title}
-														/>
-													</div>
+											<div className="interaction-screenshot">
+												<div className="screen-asset">
+													<img src={getScreenAsset()} alt={currentStep.title} />
 												</div>
 											</div>
-										)
+										</div>
 									) : (
 										<div className="step-header">
 											<div className="highlight-text">{currentStep.title}</div>
@@ -1389,29 +1175,10 @@ const ControllerView = () => {
 															onMouseUp={handleMouseUp}
 														>
 															<img
-																src={cacheBuster.addCacheBuster(
-																	getScreenAsset()
-																)}
+																src={getScreenAsset()}
 																alt={currentStep.title}
-																className={`${
-																	currentStep.id === "step14" &&
-																	currentStep.screenAsset ===
-																		"/assets/screenshots/scenario6/12.png"
-																		? "scenario6-step14-image fade-transition"
-																		: ""
-																} ${imageLoaded ? "loaded" : ""}`}
-																onLoad={() => {
-																	console.log(
-																		"Image onLoad fired for:",
-																		currentStep.id
-																	);
-																	setImageLoaded(true);
-																}}
+																onLoad={() => setImageLoaded(true)}
 																onError={(e) => {
-																	console.error(
-																		"Image failed to load:",
-																		currentStep.id
-																	);
 																	e.target.style.display = "none";
 																	setImageLoaded(true);
 																}}
@@ -1422,200 +1189,79 @@ const ControllerView = () => {
 																}}
 															/>
 
-															{/* Scenario6 Step14 Overlay Image - shows bar graph growth animation */}
-															{currentStep.id === "step14" &&
-																currentStep.screenAsset ===
-																	"/assets/screenshots/scenario6/12.png" &&
-																scenario6Step14State.showSecondImage && (
+															{/* Scrollable Report Overlay */}
+															{currentStep.scrollableReport && (
+																<div
+																	style={{
+																		position: "absolute",
+																		left: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.x /
+																				1200) *
+																			100
+																		}%`,
+																		top: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.y /
+																				675) *
+																			100
+																		}%`,
+																		width: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.width /
+																				1200) *
+																			100
+																		}%`,
+																		height: `${
+																			(currentStep.scrollableReport
+																				.viewportBounds.height /
+																				675) *
+																			100
+																		}%`,
+																		overflow: "hidden",
+																		cursor: scrollableReportState.isDragging
+																			? "grabbing"
+																			: "grab",
+																		willChange: "contents",
+																		contain: "layout",
+																	}}
+																	onMouseDown={handleReportMouseDown}
+																	onTouchStart={handleReportTouchStart}
+																>
 																	<img
-																		src={cacheBuster.addCacheBuster(
-																			"/assets/screenshots/scenario6/12.5.png"
-																		)}
-																		alt="Updated bar graph with growth"
-																		className={`scenario6-step14-overlay ${
-																			scenario6Step14State.startAnimation
-																				? "reveal-up"
-																				: ""
-																		}`}
+																		ref={reportImageRef}
+																		src={
+																			currentStep.scrollableReport.reportImage
+																		}
+																		alt="Scrollable Report"
 																		style={{
 																			position: "absolute",
-																			top: 0,
+																			top: `-${scrollableReportState.scrollPosition}px`,
 																			left: 0,
 																			width: "100%",
 																			height: "100%",
-																			objectFit: "contain",
+																			minHeight: "2250px",
+																			objectFit: "cover",
+																			objectPosition: "top left",
 																			pointerEvents: "none",
-																			zIndex: 5,
+																			userSelect: "none",
+																			willChange: "transform",
+																			transform: "translateZ(0)",
+																		}}
+																		onLoad={() => {
+																			console.log(
+																				"Report image loaded:",
+																				reportImageRef.current?.naturalHeight
+																			);
 																		}}
 																	/>
-																)}
-
-															{/* Scrollable Report Overlay */}
-															{currentStep.scrollableReport &&
-																(console.log(
-																	"🔄 Rendering scrollable report container:",
-																	{
-																		stepId: currentStep.id,
-																		layoutType: currentStep.layoutType,
-																		reportImage:
-																			currentStep.scrollableReport.reportImage,
-																		viewportBounds:
-																			currentStep.scrollableReport
-																				.viewportBounds,
-																		calculatedDimensions: {
-																			left: `${
-																				(currentStep.scrollableReport
-																					.viewportBounds.x /
-																					(currentStep.layoutType === "laptop"
-																						? 1200
-																						: 400)) *
-																				100
-																			}%`,
-																			top: `${
-																				(currentStep.scrollableReport
-																					.viewportBounds.y /
-																					(currentStep.layoutType === "laptop"
-																						? 675
-																						: 800)) *
-																				100
-																			}%`,
-																			width: `${
-																				(currentStep.scrollableReport
-																					.viewportBounds.width /
-																					(currentStep.layoutType === "laptop"
-																						? 1200
-																						: 400)) *
-																				100
-																			}%`,
-																			height: `${
-																				(currentStep.scrollableReport
-																					.viewportBounds.height /
-																					(currentStep.layoutType === "laptop"
-																						? 675
-																						: 800)) *
-																				100
-																			}%`,
-																		},
-																	}
-																),
-																(
-																	<div
-																		style={{
-																			position: "absolute",
-																			left: `${
-																				(currentStep.scrollableReport
-																					.viewportBounds.x /
-																					(currentStep.layoutType === "laptop"
-																						? 1200
-																						: 400)) *
-																				100
-																			}%`,
-																			top: `${
-																				(currentStep.scrollableReport
-																					.viewportBounds.y /
-																					(currentStep.layoutType === "laptop"
-																						? 675
-																						: 800)) *
-																				100
-																			}%`,
-																			width: `${
-																				(currentStep.scrollableReport
-																					.viewportBounds.width /
-																					(currentStep.layoutType === "laptop"
-																						? 1200
-																						: 400)) *
-																				100
-																			}%`,
-																			height: `${
-																				(currentStep.scrollableReport
-																					.viewportBounds.height /
-																					(currentStep.layoutType === "laptop"
-																						? 675
-																						: 800)) *
-																				100
-																			}%`,
-																			overflow: "hidden",
-																			cursor: scrollableReportState.isDragging
-																				? "grabbing"
-																				: "grab",
-																			willChange: "contents",
-																			contain: "layout",
-																			zIndex: 100,
-																			
-																		}}
-																		onMouseDown={handleReportMouseDown}
-																		onTouchStart={handleReportTouchStart}
-																	>
-																		<img
-																			ref={reportImageRef}
-																			src="/assets/screenshots/scenario2/report_1.png"
-																			alt="Scrollable Report - DEBUG HARDCODED"
-																			style={{
-																				position: "absolute",
-																				top: `-${scrollableReportState.scrollPosition}px`,
-																				left: 0,
-																				width: "100%",
-																				height: "auto",
-																				minHeight: "2250px", // Match working OLD.js implementation
-																				objectFit: "cover",
-																				objectPosition: "top left",
-																				pointerEvents: "none",
-																				userSelect: "none",
-																				willChange: "transform",
-																				transform: "translateZ(0)",
-																				// Temporary debugging styles for laptop layout
-																				...(currentStep.layoutType ===
-																					"laptop" && {
-																					zIndex: 999,
-																					opacity: "1", // Force visibility
-																					display: "block", // Force display
-																					minWidth: "200px", // Force minimum size
-																					minHeight: "1900px", // Force minimum size
-																				}),
-																			}}
-																			onLoad={() => {
-																				console.log(
-																					"📊 Scrollable report image loaded:",
-																					{
-																						src: currentStep.scrollableReport
-																							.reportImage,
-																						naturalHeight:
-																							reportImageRef.current
-																								?.naturalHeight,
-																						naturalWidth:
-																							reportImageRef.current
-																								?.naturalWidth,
-																						offsetHeight:
-																							reportImageRef.current
-																								?.offsetHeight,
-																						offsetWidth:
-																							reportImageRef.current
-																								?.offsetWidth,
-																						layoutType: currentStep.layoutType,
-																						stepId: currentStep.id,
-																					}
-																				);
-																			}}
-																			onError={(e) => {
-																				console.error(
-																					"❌ Scrollable report image failed to load:",
-																					{
-																						src: currentStep.scrollableReport
-																							.reportImage,
-																						error: e,
-																						stepId: currentStep.id,
-																					}
-																				);
-																			}}
-																		/>
-																	</div>
-																))}
+																</div>
+															)}
 
 															{/* Standard interaction button for step14 when scroll is complete - OUTSIDE scrollable container */}
 															{currentStep.id === "step14" &&
 																currentStep.scrollableReport &&
-																currentStep.scrollableReport
-																	.interactionButton &&
+																currentStep.scrollableReport.interactionButton &&
 																scrollableReportState.scrollProgress >= 0.8 && (
 																	<button
 																		className="interaction-button box-indicator assistance-zone-visible"
@@ -1632,30 +1278,10 @@ const ControllerView = () => {
 																		}}
 																		style={{
 																			position: "absolute",
-																			left: `${
-																				(currentStep.scrollableReport
-																					.interactionButton.position.x /
-																					1400) *
-																				100
-																			}%`,
-																			top: `${
-																				(currentStep.scrollableReport
-																					.interactionButton.position.y /
-																					810) *
-																				100
-																			}%`,
-																			width: `${
-																				(currentStep.scrollableReport
-																					.interactionButton.size.width /
-																					1400) *
-																				100
-																			}%`,
-																			height: `${
-																				(currentStep.scrollableReport
-																					.interactionButton.size.height /
-																					810) *
-																				100
-																			}%`,
+																			left: `${(currentStep.scrollableReport.interactionButton.position.x / 1400) * 100}%`,
+																			top: `${(currentStep.scrollableReport.interactionButton.position.y / 810) * 100}%`,
+																			width: `${(currentStep.scrollableReport.interactionButton.size.width / 1400) * 100}%`,
+																			height: `${(currentStep.scrollableReport.interactionButton.size.height / 810) * 100}%`,
 																			zIndex: 30,
 																		}}
 																	></button>
@@ -1686,32 +1312,16 @@ const ControllerView = () => {
 																			style={{
 																				position: "absolute",
 																				left: `${
-																					(interaction.position.x /
-																						(currentStep.layoutType === "laptop"
-																							? 1400
-																							: 400)) *
-																					100
+																					(interaction.position.x / 1400) * 100
 																				}%`,
 																				top: `${
-																					(interaction.position.y /
-																						(currentStep.layoutType === "laptop"
-																							? 810
-																							: 800)) *
-																					100
+																					(interaction.position.y / 810) * 100
 																				}%`,
 																				width: `${
-																					(interaction.size.width /
-																						(currentStep.layoutType === "laptop"
-																							? 1400
-																							: 400)) *
-																					100
+																					(interaction.size.width / 1400) * 100
 																				}%`,
 																				height: `${
-																					(interaction.size.height /
-																						(currentStep.layoutType === "laptop"
-																							? 810
-																							: 800)) *
-																					100
+																					(interaction.size.height / 810) * 100
 																				}%`,
 																				borderRadius:
 																					interaction.indicatorType === "circle"
@@ -1771,17 +1381,8 @@ const ControllerView = () => {
 															onMouseUp={handleMouseUp}
 														>
 															<img
-																src={cacheBuster.addCacheBuster(
-																	getScreenAsset()
-																)}
+																src={getScreenAsset()}
 																alt={currentStep.title}
-																className={
-																	currentStep.id === "step14" &&
-																	currentStep.screenAsset ===
-																		"/assets/screenshots/scenario6/12.png"
-																		? "scenario6-step14-image fade-transition"
-																		: ""
-																}
 																onLoad={() => setImageLoaded(true)}
 																onError={(e) => {
 																	e.target.style.display = "none";
@@ -1793,194 +1394,6 @@ const ControllerView = () => {
 																	height: "auto",
 																}}
 															/>
-
-															{/* Scenario6 Step14 Overlay Image - phone layout - shows bar graph growth animation */}
-															{currentStep.id === "step14" &&
-																currentStep.screenAsset ===
-																	"/assets/screenshots/scenario6/12.png" &&
-																scenario6Step14State.showSecondImage && (
-																	<img
-																		src={cacheBuster.addCacheBuster(
-																			"/assets/screenshots/scenario6/12.5.png"
-																		)}
-																		alt="Updated bar graph with growth"
-																		className={`scenario6-step14-overlay ${
-																			scenario6Step14State.startAnimation
-																				? "reveal-up"
-																				: ""
-																		}`}
-																		style={{
-																			position: "absolute",
-																			top: 0,
-																			left: 0,
-																			width: "100%",
-																			height: "100%",
-																			objectFit: "contain",
-																			pointerEvents: "none",
-																			zIndex: 5,
-																		}}
-																	/>
-																)}
-
-															{/* Scrollable Report Overlay for iPhone layout */}
-															{currentStep.scrollableReport && (
-																<div
-																	style={{
-																		position: "absolute",
-																		left: `${
-																			(currentStep.scrollableReport
-																				.viewportBounds.x /
-																				(currentStep.layoutType === "laptop"
-																					? 1400
-																					: 400)) *
-																			100
-																		}%`,
-																		top: `${
-																			(currentStep.scrollableReport
-																				.viewportBounds.y /
-																				(currentStep.layoutType === "laptop"
-																					? 810
-																					: 800)) *
-																			100
-																		}%`,
-																		width: `${
-																			(currentStep.scrollableReport
-																				.viewportBounds.width /
-																				(currentStep.layoutType === "laptop"
-																					? 1400
-																					: 400)) *
-																			100
-																		}%`,
-																		height: `${
-																			(currentStep.scrollableReport
-																				.viewportBounds.height /
-																				(currentStep.layoutType === "laptop"
-																					? 810
-																					: 800)) *
-																			100
-																		}%`,
-																		overflow: "hidden",
-																		cursor: scrollableReportState.isDragging
-																			? "grabbing"
-																			: "grab",
-																		willChange: "contents",
-																		contain: "layout",
-																		zIndex: 100,
-																	}}
-																	onMouseDown={handleReportMouseDown}
-																	onTouchStart={handleReportTouchStart}
-																>
-																	<img
-																		ref={reportImageRef}
-																		src={
-																			currentStep.scrollableReport.reportImage
-																		}
-																		alt="Scrollable Report"
-																		style={{
-																			position: "absolute",
-																			top: `-${scrollableReportState.scrollPosition}px`,
-																			left: 0,
-																			width: "100%",
-																			height: "auto",
-																			minHeight: "1600px",
-																			objectFit: "cover",
-																			objectPosition: "top center",
-																			pointerEvents: "none",
-																			userSelect: "none",
-																			willChange: "transform",
-																			transform: "translateZ(0)",
-																		}}
-																		onLoad={() => {
-																			console.log(
-																				"📊 Scrollable report image loaded:",
-																				{
-																					src: currentStep.scrollableReport
-																						.reportImage,
-																					naturalHeight:
-																						reportImageRef.current
-																							?.naturalHeight,
-																					naturalWidth:
-																						reportImageRef.current
-																							?.naturalWidth,
-																					offsetHeight:
-																						reportImageRef.current
-																							?.offsetHeight,
-																					offsetWidth:
-																						reportImageRef.current?.offsetWidth,
-																					layoutType: currentStep.layoutType,
-																					stepId: currentStep.id,
-																				}
-																			);
-																		}}
-																		onError={(e) => {
-																			console.error(
-																				"❌ Scrollable report image failed to load:",
-																				{
-																					src: currentStep.scrollableReport
-																						.reportImage,
-																					error: e,
-																					stepId: currentStep.id,
-																				}
-																			);
-																		}}
-																	/>
-																</div>
-															)}
-
-															{/* Interaction zone that appears after scroll is complete */}
-															{currentStep.scrollableReport &&
-																currentStep.scrollableReport
-																	.interactionButton &&
-																scrollableReportState.isScrollComplete && (
-																	<div
-																		className={`assistance-zone-visible box-indicator`}
-																		onClick={(e) => {
-																			e.preventDefault();
-																			e.stopPropagation();
-																			const scrollCompleteInteraction =
-																				currentStep.interactions?.find(
-																					(interaction) =>
-																						interaction.type ===
-																						"scroll-complete"
-																				);
-																			if (scrollCompleteInteraction) {
-																				handleInteraction(
-																					scrollCompleteInteraction
-																				);
-																			}
-																		}}
-																		style={{
-																			position: "absolute",
-																			left: `${
-																				(currentStep.scrollableReport
-																					.interactionButton.position.x /
-																					400) *
-																				100
-																			}%`,
-																			top: `${
-																				(currentStep.scrollableReport
-																					.interactionButton.position.y /
-																					800) *
-																				100
-																			}%`,
-																			width: `${
-																				(currentStep.scrollableReport
-																					.interactionButton.size.width /
-																					400) *
-																				100
-																			}%`,
-																			height: `${
-																				(currentStep.scrollableReport
-																					.interactionButton.size.height /
-																					800) *
-																				100
-																			}%`,
-																			cursor: "pointer",
-																			zIndex: 15,
-																		}}
-																	/>
-																)}
-
 															{currentStep.useImageMapper &&
 																currentStep.interactions
 																	?.filter(
