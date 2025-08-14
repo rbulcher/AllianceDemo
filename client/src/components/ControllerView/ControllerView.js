@@ -297,8 +297,12 @@ const ControllerView = () => {
 							step.id === "step14" &&
 							step.screenAsset === "/assets/screenshots/scenario6/12.png"
 						) {
+							console.log(
+								"🔥 SCENARIO6 STEP14 DETECTED - Starting animation sequence"
+							);
 							// Start animation immediately - no delay to see base chart
 							setTimeout(() => {
+								console.log("🔥 Setting showSecondImage to true");
 								// First show the overlay image (but still hidden with CSS)
 								setScenario6Step14State({
 									showSecondImage: true,
@@ -307,6 +311,9 @@ const ControllerView = () => {
 
 								// Then trigger the animation immediately
 								setTimeout(() => {
+									console.log(
+										"🔥 Starting animation - setting startAnimation to true"
+									);
 									setScenario6Step14State({
 										showSecondImage: true,
 										startAnimation: true,
@@ -314,21 +321,23 @@ const ControllerView = () => {
 								}, 50); // Minimal delay just for state update
 							}, 200); // Brief delay to ensure base image is loaded
 
-							// Hardcoded auto-advance for scenario6 step14 only - advance faster after animation
+							// Simple hardcoded auto-advance: if step14, wait for animation then go to step15
 							setTimeout(() => {
-								if (
-									currentScenario?.id === "scenario6" &&
-									step.id === "step14"
-								) {
-									console.log(
-										"🚀 Scenario6 Step14: Auto-advancing to step15 after animation"
-									);
-									handleInteraction({
+								console.log(
+									"� HARDCODED: Auto-advancing from step14 to step15 after animation"
+								);
+								// Call nextStep directly instead of using handleInteraction
+								const stepData = {
+									stepNumber: (demoState.currentStep || 0) + 1,
+									stepId: "step14",
+									interaction: {
 										id: "auto-advance-step14",
 										action: "next-step",
-									});
-								}
-							}, 4000); // 4 seconds total wait time (much faster)
+									},
+								};
+								console.log("🚀 Calling nextStep with:", stepData);
+								nextStep(stepData);
+							}, 3000); // Wait 4 seconds then auto-advance
 						}
 
 						// Reset scrollable report state for new step
@@ -1333,6 +1342,9 @@ const ControllerView = () => {
 																		pointerEvents: "none",
 																		zIndex: 5,
 																	}}
+																	onLoad={() =>
+																		console.log("🔥 Overlay image loaded!")
+																	}
 																/>
 															)}
 													</div>
