@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSocket } from "../../hooks/useSocket";
 import { getScenario } from "../../data/scenarios";
-import { resolveVideoAsset } from "../../utils/videoUtils";
+import { resolveVideoAsset, VIDEO_KEYS } from "../../utils/videoUtils";
 import "./DisplayView.css";
 
 const DisplayView = () => {
@@ -20,8 +20,54 @@ const DisplayView = () => {
 	const [isVideoDelaying, setIsVideoDelaying] = useState(false);
 	const [showEndFrameOverlay, setShowEndFrameOverlay] = useState(false);
 	const videoRef = useRef(null);
+	const idleVideoRef = useRef(null);
 	const videoLoadingRef = useRef(false);
 	const currentVideoRef = useRef(null);
+
+	// Effect to handle idle video in connecting/standby states
+	useEffect(() => {
+		if ((!isConnected || !currentScenario) && idleVideoRef.current) {
+			const idleVideoUrl = resolveVideoAsset(`VIDEO_KEY:${VIDEO_KEYS.IDLE_VIDEO}`);
+			console.log("Loading idle video:", idleVideoUrl);
+			
+			if (idleVideoUrl) {
+				idleVideoRef.current.src = idleVideoUrl;
+				idleVideoRef.current.load();
+				
+				// Add event listeners to debug video loading
+				const handleLoadedData = () => {
+					console.log("Idle video loaded data successfully");
+					idleVideoRef.current.play().catch(error => {
+						console.warn("Idle video autoplay failed:", error);
+					});
+				};
+				
+				const handleError = (e) => {
+					console.error("Idle video error:", e);
+					console.error("Video src:", idleVideoRef.current?.src);
+				};
+				
+				const handleCanPlay = () => {
+					console.log("Idle video can play");
+				};
+				
+				idleVideoRef.current.addEventListener('loadeddata', handleLoadedData);
+				idleVideoRef.current.addEventListener('error', handleError);
+				idleVideoRef.current.addEventListener('canplay', handleCanPlay);
+				
+				// Cleanup function
+				return () => {
+					if (idleVideoRef.current) {
+						idleVideoRef.current.removeEventListener('loadeddata', handleLoadedData);
+						idleVideoRef.current.removeEventListener('error', handleError);
+						idleVideoRef.current.removeEventListener('canplay', handleCanPlay);
+					}
+				};
+			} else {
+				console.error("Idle video URL is null or undefined");
+			}
+		}
+	}, [isConnected, currentScenario]);
 
 	useEffect(() => {
 		if (demoState.currentScenario) {
@@ -299,11 +345,26 @@ const DisplayView = () => {
 
 	if (!isConnected) {
 		return (
-			<div className="display-view connecting">
-				<div className="connection-message">
-					<h1>Alliance Commercial Laundry Demo</h1>
-					<p>Connecting to demo system...</p>
-					<div className="spinner"></div>
+			<div 
+				className="display-view connecting"
+				style={{
+					backgroundImage: "url(/assets/scenarioBackground.png)",
+					backgroundSize: "cover",
+					backgroundPosition: "center",
+					backgroundRepeat: "no-repeat",
+				}}
+			>
+				<div className="idle-video-container">
+					<video
+						ref={idleVideoRef}
+						className="idle-video"
+						autoPlay
+						muted
+						loop
+						playsInline
+					>
+						Your browser does not support the video tag.
+					</video>
 				</div>
 			</div>
 		);
@@ -311,7 +372,7 @@ const DisplayView = () => {
 
 	if (!currentScenario) {
 		return (
-			<div
+			<div 
 				className="display-view standby"
 				style={{
 					backgroundImage: "url(/assets/scenarioBackground.png)",
@@ -320,15 +381,17 @@ const DisplayView = () => {
 					backgroundRepeat: "no-repeat",
 				}}
 			>
-				<div className="standby-screen">
-					<div className="alliance-logo">
-						<h1>Alliance Commercial Laundry</h1>
-						<p>Interactive Demo System</p>
-					</div>
-					<div className="standby-message">
-						<h2>Demo Ready</h2>
-						<p>Use the iPad controller to begin a scenario</p>
-					</div>
+				<div className="idle-video-container">
+					<video
+						ref={idleVideoRef}
+						className="idle-video"
+						autoPlay
+						muted
+						loop
+						playsInline
+					>
+						Your browser does not support the video tag.
+					</video>
 				</div>
 			</div>
 		);

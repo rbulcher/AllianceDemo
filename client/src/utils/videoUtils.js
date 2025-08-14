@@ -3,6 +3,8 @@ import cacheBuster from './cacheBuster';
 
 // Cloud storage URLs for online demo
 const CLOUD_VIDEO_URLS = {
+	"idle-video":
+		"https://storage.googleapis.com/alliance-demo-bucket/idleVideo.mp4",
 	"scenario1-video1":
 		"https://storage.googleapis.com/alliance-demo-bucket/Scenario1Video1.mp4",
 	"scenario1-video2":
@@ -38,6 +40,7 @@ const CLOUD_VIDEO_URLS = {
 
 // Local video paths for offline demo
 const LOCAL_VIDEO_URLS = {
+	"idle-video": "/assets/videos/idleVideo.mp4",
 	"scenario1-video1": "/assets/videos/scenario1/1.mp4",
 	"scenario1-video2": "/assets/videos/scenario1/2.mp4",
 	"scenario2-video1": "/assets/videos/scenario2/1.mp4",
@@ -131,6 +134,7 @@ export const resolveVideoAsset = (videoAsset) => {
 
 // Export video keys for easy reference
 export const VIDEO_KEYS = {
+	IDLE_VIDEO: "idle-video",
 	SCENARIO1_VIDEO1: "scenario1-video1",
 	SCENARIO1_VIDEO2: "scenario1-video2",
 	SCENARIO2_VIDEO1: "scenario2-video1",
