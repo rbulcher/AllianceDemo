@@ -8,7 +8,7 @@ import {
 import { ROUTES } from "./utils/constants";
 import DisplayView from "./components/DisplayView/DisplayView";
 import ControllerView from "./components/ControllerView/ControllerView";
-import AdminPanel from "./components/Admin/AdminPanel";
+import AdminAuth from "./components/Admin/AdminAuth";
 import ErrorBoundary from "./components/Common/ErrorBoundary";
 import "./App.css";
 
@@ -24,7 +24,7 @@ function App() {
 						/>
 						<Route path={ROUTES.CONTROLLER} element={<ControllerView />} />
 						<Route path={ROUTES.DISPLAY} element={<DisplayView />} />
-						<Route path={ROUTES.ADMIN} element={<AdminPanel />} />
+						<Route path={ROUTES.ADMIN} element={<AdminAuth />} />
 						{/* Redirect old scenario select route to controller */}
 						<Route
 							path={ROUTES.SCENARIO_SELECT}

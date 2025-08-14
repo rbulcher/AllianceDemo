@@ -135,13 +135,13 @@
 
 .idle-video-container {
   position: relative;
-  width: 100%;
-  max-width: 1400px;
+  width: 90%; /* Add side spacing instead of full width */
+  max-width: 1600px; /* Moderately larger than scenario videos (1400px) */
   aspect-ratio: 16/9;
   background: #000;
-  border-radius: 15px;
+  border-radius: 20px; /* Slightly larger border radius */
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.6); /* Enhanced shadow for more presence */
 }
 
 .idle-video {
@@ -665,6 +665,13 @@
     min-height: 80vh;
     padding: 6rem 3rem;
   }
+
+  /* Larger idle video for big screens */
+  .idle-video-container {
+    max-width: 1800px; /* More reasonable size for large screens */
+    border-radius: 25px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.7);
+  }
 }
 
 /* Ultra-wide TV displays (4K+) */
@@ -683,6 +690,13 @@
   
   .standby-message p {
     font-size: 3rem;
+  }
+
+  /* Even larger idle video for ultra-wide displays */
+  .idle-video-container {
+    max-width: 2000px; /* Reduced from 2400px for better proportions */
+    border-radius: 30px;
+    box-shadow: 0 35px 70px rgba(0,0,0,0.8);
   }
 }
 
@@ -715,6 +729,13 @@
     margin-right: 0;
   }
   
+  /* Mobile idle video adjustments */
+  .idle-video-container {
+    width: 90%; /* Maintain side spacing on mobile */
+    max-width: 95%;
+    border-radius: 12px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+  }
   
   /* Mobile instruction text adjustments */
   .tv-content {

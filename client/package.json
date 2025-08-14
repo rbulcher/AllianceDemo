@@ -4,6 +4,7 @@
 	"private": true,
 	"description": "Alliance Commercial Laundry Interactive Demo - Client",
 	"homepage": ".",
+	"proxy": "http://localhost:5000",
 	"dependencies": {
 		"framer-motion": "^12.23.3",
 		"react": "^19.1.0",

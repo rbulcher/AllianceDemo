@@ -1,9 +1,10 @@
 /* Dark Theme Admin Panel CSS */
 
-/* Hide horizontal scrollbar only, keep vertical scrollbar always visible */
-body {
+/* Admin-specific body styles - only apply when admin panel is active */
+.admin-panel-container {
   overflow-x: hidden;
   overflow-y: scroll;
+  min-height: 100vh;
 }
 
 .admin-panel {

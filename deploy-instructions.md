@@ -3,4 +3,4 @@
 - gcloud run deploy alliance-demo --image gcr.io/alliancedemo/alliance-demo --platform managed --region us-central1 --allow-unauthenticated --memory 512Mi --cpu 1 --max-instances 2
 
 - gcloud auth login rjbulcher@gmail.com
-- gcloud auth login rjbulcher@gmail.com
+- gcloud config set project alliancedemo

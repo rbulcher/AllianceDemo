@@ -26,6 +26,7 @@ export const ROUTES = {
 	CONTROLLER: "/controller",
 	DISPLAY: "/display",
 	ADMIN: "/admin",
+	ADMIN_PANEL: "/admin-panel",
 	SCENARIO_SELECT: "/select-scenario",
 };
 

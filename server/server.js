@@ -55,6 +55,8 @@ const initializeServices = async () => {
 app.use(cors());
 app.use(express.json());
 
+// Simple admin password - no session storage needed
+
 // Serve static files (videos now served from Cloud Storage)
 app.use(express.static("public"));
 
@@ -335,6 +337,24 @@ io.on("connection", (socket) => {
 	});
 });
 
+// Simple admin password check endpoint
+app.post("/api/admin/auth", (req, res) => {
+	const { password } = req.body;
+	const correctPassword = "7913";
+	
+	if (password === correctPassword) {
+		res.json({ 
+			success: true,
+			message: "Authentication successful"
+		});
+	} else {
+		res.status(401).json({ 
+			success: false, 
+			message: "Invalid password" 
+		});
+	}
+});
+
 // REST API endpoints for admin
 app.get("/api/status", (req, res) => {
 	res.json({
@@ -466,8 +486,228 @@ app.delete("/api/analytics", async (req, res) => {
 	}
 });
 
-// Catch-all handler: send back React's index.html file for client-side routing
+// Simple handler for admin route - serve React app and let client-side handle auth
 const path = require("path");
+app.get("/admin*", (req, res) => {
+	res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Also serve the login form at a specific endpoint
+app.get("/admin-login", (req, res) => {
+	const loginHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alliance Demo - Admin Login</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ffffff;
+        }
+        .login-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .login-title {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00d4ff, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+        .login-subtitle {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 1.1rem;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .error-message {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.4);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            color: #ff6b6b;
+            font-size: 0.95rem;
+        }
+        .success-message {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid rgba(40, 167, 69, 0.4);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            color: #51cf66;
+            font-size: 0.95rem;
+        }
+        .loading {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1 class="login-title">Alliance Demo</h1>
+        <p class="login-subtitle">Admin Access Required</p>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label" for="password">Enter Admin Password:</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    class="form-input" 
+                    placeholder="Password"
+                    required 
+                    autocomplete="current-password"
+                />
+            </div>
+            
+            <button type="submit" class="login-button" id="loginButton">
+                Access Admin Panel
+            </button>
+        </form>
+        
+        <div id="message" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const password = document.getElementById('password').value;
+            const button = document.getElementById('loginButton');
+            const messageDiv = document.getElementById('message');
+            const form = document.getElementById('loginForm');
+            
+            // Show loading state
+            button.disabled = true;
+            button.textContent = 'Authenticating...';
+            form.classList.add('loading');
+            messageDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/admin/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    messageDiv.className = 'success-message';
+                    messageDiv.textContent = 'Authentication successful! Redirecting...';
+                    messageDiv.style.display = 'block';
+                    
+                    // Store authentication in localStorage and redirect
+                    localStorage.setItem('adminAuth', 'true');
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 1000);
+                } else {
+                    messageDiv.className = 'error-message';
+                    messageDiv.textContent = result.message || 'Authentication failed';
+                    messageDiv.style.display = 'block';
+                }
+            } catch (error) {
+                messageDiv.className = 'error-message';
+                messageDiv.textContent = 'Connection error. Please try again.';
+                messageDiv.style.display = 'block';
+            }
+            
+            // Reset button state
+            button.disabled = false;
+            button.textContent = 'Access Admin Panel';
+            form.classList.remove('loading');
+        });
+        
+        // Auto-focus password field
+        document.getElementById('password').focus();
+        
+        // Clear any error messages when user starts typing
+        document.getElementById('password').addEventListener('input', () => {
+            const messageDiv = document.getElementById('message');
+            if (messageDiv.classList.contains('error-message')) {
+                messageDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+		`;
+		
+		res.send(loginHtml);
+});
+
+// Catch-all handler: send back React's index.html file for client-side routing
 app.get("*", (req, res) => {
 	res.sendFile(path.join(__dirname, "public", "index.html"));
 });

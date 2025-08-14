@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useSocket } from "../../hooks/useSocket";
 import { getAllScenarios } from "../../data/scenarios";
 import { ROUTES, APP_CONFIG } from "../../utils/constants";
+import { getServerUrl } from "../../utils/serverConfig";
 import {
 	BarChart,
 	Bar,
@@ -16,6 +17,8 @@ import {
 	Legend,
 } from "recharts";
 import "./AdminPanel.css";
+
+const SERVER_URL = getServerUrl();
 
 const AdminPanel = () => {
 	const {
@@ -76,7 +79,7 @@ const AdminPanel = () => {
 		const loadPersistentAnalytics = async () => {
 			try {
 				console.log("📊 Loading persistent analytics from database...");
-				const response = await fetch("/api/analytics");
+				const response = await fetch(`${SERVER_URL}/api/analytics`);
 				if (response.ok) {
 					const data = await response.json();
 					if (data.offline) {
@@ -528,166 +531,168 @@ const AdminPanel = () => {
 	const currentScenario = getCurrentScenarioInfo();
 
 	return (
-		<div className="admin-panel">
-			<div className="admin-header">
-				<h1>Alliance Demo - Remote Admin</h1>
-				<div className="connection-status">
-					{isConnected ? (
-						<span className="device-connected">Online</span>
-					) : (
-						<span className="device-disconnected">Disconnected</span>
-					)}
-				</div>
-			</div>
-
-			<div className="admin-content">
-				{/* HARD RESET */}
-				<div className="admin-section reset-section">
-					<div className="reset-controls">
-						<button className="reset-button" onClick={handleReset}>
-							Hard Reset Demo
-						</button>
-						<div className="reset-info">
-							<div>
-								Current Status:{" "}
-								{demoState.currentScenario ? (
-									<span className="status-active">
-										{currentScenario?.title || demoState.currentScenario} - Step{" "}
-										{demoState.currentStep + 1}
-										{currentScenario && ` of ${currentScenario.totalSteps}`}
-										{demoState.isVideoPlaying && " (Video Playing)"}
-									</span>
-								) : (
-									<span className="status-idle">Demo Idle</span>
-								)}
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* REMOTE NAVIGATION */}
-				<div className="admin-section">
-					<h2>Remote Navigation</h2>
-					<div className="navigation-controls">
-						<div className="control-row">
-							<div className="control-group">
-								<label>Select Scenario:</label>
-								<select
-									value={selectedScenario}
-									onChange={(e) => setSelectedScenario(e.target.value)}
-									className="scenario-select"
-								>
-									<option value="">Choose scenario...</option>
-									{scenarios.map((scenario) => (
-										<option key={scenario.id} value={scenario.id}>
-											{scenario.title} ({scenario.totalSteps} steps)
-										</option>
-									))}
-								</select>
-							</div>
-							<div className="control-group">
-								<label>Select Step:</label>
-								<input
-									type="number"
-									min="1"
-									max="30"
-									value={targetStep}
-									onChange={(e) => setTargetStep(parseInt(e.target.value))}
-									className="step-input"
-									placeholder="Step #"
-								/>
-							</div>
-							<div className="control-group">
-								<button
-									className="launch-button"
-									onClick={() => {
-										if (selectedScenario && targetStep) {
-											handleStartScenario();
-											handleGotoStep();
-										} else if (selectedScenario) {
-											handleStartScenario();
-										} else if (targetStep) {
-											handleGotoStep();
-										}
-									}}
-									disabled={!selectedScenario && !targetStep}
-								>
-									Launch
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* CONNECTED DEVICES */}
-				<div className="admin-section">
-					<h2>Connected Devices</h2>
-					<div className="devices-grid">
-						<div className="device-status">
-							<div className="device-type">Controller (iPad)</div>
-							<div className="device-info">
-								{analytics.connectedDevices.find(
-									(d) => d.type === "controller"
-								) ? (
-									<span className="device-connected">Connected</span>
-								) : (
-									<span className="device-disconnected">Disconnected</span>
-								)}
-							</div>
-						</div>
-						<div className="device-status">
-							<div className="device-type">Display (TV)</div>
-							<div className="device-info">
-								{analytics.connectedDevices.find(
-									(d) => d.type === "display"
-								) ? (
-									<span className="device-connected">Connected</span>
-								) : (
-									<span className="device-disconnected">Disconnected</span>
-								)}
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* ANALYTICS DASHBOARD */}
-				<div className="admin-section">
-					<h2>
-						Analytics Dashboard
-						{analytics.offline && (
-							<span className="offline-indicator"> (Offline Mode)</span>
-						)}
-					</h2>
-					{analytics.offline && (
-						<div className="offline-notice">
-							<p>⚠️ Analytics are disabled - running in offline mode</p>
-						</div>
-					)}
-					<div className="daily-analytics-container">
-						{getSortedDailyData().length > 0 ? (
-							getSortedDailyData().map(([dateString, dayData]) => (
-								<DailyAnalyticsDisplay
-									key={dateString}
-									dateString={dateString}
-									dayData={dayData}
-									isExpanded={expandedDays.has(dateString)}
-									isToday={dateString === getTodayDateString()}
-								/>
-							))
+		<div className="admin-panel-container">
+			<div className="admin-panel">
+				<div className="admin-header">
+					<h1>Alliance Demo - Remote Admin</h1>
+					<div className="connection-status">
+						{isConnected ? (
+							<span className="device-connected">Online</span>
 						) : (
-							<div className="no-daily-data">
-								<h3>
-									{analytics.offline
-										? "Analytics disabled in offline mode"
-										: "No analytics data yet"}
-								</h3>
-								<p>
-									{analytics.offline
-										? "Database connection unavailable"
-										: "Start a scenario to begin tracking daily analytics"}
-								</p>
+							<span className="device-disconnected">Disconnected</span>
+						)}
+					</div>
+				</div>
+
+				<div className="admin-content">
+					{/* HARD RESET */}
+					<div className="admin-section reset-section">
+						<div className="reset-controls">
+							<button className="reset-button" onClick={handleReset}>
+								Hard Reset Demo
+							</button>
+							<div className="reset-info">
+								<div>
+									Current Status:{" "}
+									{demoState.currentScenario ? (
+										<span className="status-active">
+											{currentScenario?.title || demoState.currentScenario} -
+											Step {demoState.currentStep + 1}
+											{currentScenario && ` of ${currentScenario.totalSteps}`}
+											{demoState.isVideoPlaying && " (Video Playing)"}
+										</span>
+									) : (
+										<span className="status-idle">Demo Idle</span>
+									)}
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* REMOTE NAVIGATION */}
+					<div className="admin-section">
+						<h2>Remote Navigation</h2>
+						<div className="navigation-controls">
+							<div className="control-row">
+								<div className="control-group">
+									<label>Select Scenario:</label>
+									<select
+										value={selectedScenario}
+										onChange={(e) => setSelectedScenario(e.target.value)}
+										className="scenario-select"
+									>
+										<option value="">Choose scenario...</option>
+										{scenarios.map((scenario) => (
+											<option key={scenario.id} value={scenario.id}>
+												{scenario.title} ({scenario.totalSteps} steps)
+											</option>
+										))}
+									</select>
+								</div>
+								<div className="control-group">
+									<label>Select Step:</label>
+									<input
+										type="number"
+										min="1"
+										max="30"
+										value={targetStep}
+										onChange={(e) => setTargetStep(parseInt(e.target.value))}
+										className="step-input"
+										placeholder="Step #"
+									/>
+								</div>
+								<div className="control-group">
+									<button
+										className="launch-button"
+										onClick={() => {
+											if (selectedScenario && targetStep) {
+												handleStartScenario();
+												handleGotoStep();
+											} else if (selectedScenario) {
+												handleStartScenario();
+											} else if (targetStep) {
+												handleGotoStep();
+											}
+										}}
+										disabled={!selectedScenario && !targetStep}
+									>
+										Launch
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* CONNECTED DEVICES */}
+					<div className="admin-section">
+						<h2>Connected Devices</h2>
+						<div className="devices-grid">
+							<div className="device-status">
+								<div className="device-type">Controller (iPad)</div>
+								<div className="device-info">
+									{analytics.connectedDevices.find(
+										(d) => d.type === "controller"
+									) ? (
+										<span className="device-connected">Connected</span>
+									) : (
+										<span className="device-disconnected">Disconnected</span>
+									)}
+								</div>
+							</div>
+							<div className="device-status">
+								<div className="device-type">Display (TV)</div>
+								<div className="device-info">
+									{analytics.connectedDevices.find(
+										(d) => d.type === "display"
+									) ? (
+										<span className="device-connected">Connected</span>
+									) : (
+										<span className="device-disconnected">Disconnected</span>
+									)}
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* ANALYTICS DASHBOARD */}
+					<div className="admin-section">
+						<h2>
+							Analytics Dashboard
+							{analytics.offline && (
+								<span className="offline-indicator"> (Offline Mode)</span>
+							)}
+						</h2>
+						{analytics.offline && (
+							<div className="offline-notice">
+								<p>⚠️ Analytics are disabled - running in offline mode</p>
 							</div>
 						)}
+						<div className="daily-analytics-container">
+							{getSortedDailyData().length > 0 ? (
+								getSortedDailyData().map(([dateString, dayData]) => (
+									<DailyAnalyticsDisplay
+										key={dateString}
+										dateString={dateString}
+										dayData={dayData}
+										isExpanded={expandedDays.has(dateString)}
+										isToday={dateString === getTodayDateString()}
+									/>
+								))
+							) : (
+								<div className="no-daily-data">
+									<h3>
+										{analytics.offline
+											? "Analytics disabled in offline mode"
+											: "No analytics data yet"}
+									</h3>
+									<p>
+										{analytics.offline
+											? "Database connection unavailable"
+											: "Start a scenario to begin tracking daily analytics"}
+									</p>
+								</div>
+							)}
+						</div>
 					</div>
 				</div>
 			</div>

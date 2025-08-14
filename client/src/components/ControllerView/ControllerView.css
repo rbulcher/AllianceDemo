@@ -930,7 +930,7 @@
 /* Bottom-up reveal animation for scenario6 step14 - creates bar graph growth effect */
 .scenario6-step14-overlay {
   clip-path: inset(100% 0 0 0) !important;
-  transition: clip-path 10s cubic-bezier(0.23, 1, 0.32, 1) !important;
+  transition: clip-path 20s cubic-bezier(0.23, 1, 0.32, 1) !important;
   opacity: 1 !important;
 }
 
