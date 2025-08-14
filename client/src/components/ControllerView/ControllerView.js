@@ -10,7 +10,7 @@ import "./ControllerView.css";
 
 const ControllerView = () => {
 	// 🎯 DEBUG TOOL TOGGLE - Set to true to enable coordinate debugging
-	const ENABLE_DEBUG_TOOL = true;
+	const ENABLE_DEBUG_TOOL = false;
 
 	const {
 		demoState,
@@ -31,7 +31,22 @@ const ControllerView = () => {
 	const [showPreVideoButton, setShowPreVideoButton] = useState(false);
 	const [showPostVideoButton, setShowPostVideoButton] = useState(false);
 	const [showNonVideoButton, setShowNonVideoButton] = useState(false);
-	const [completedScenarios, setCompletedScenarios] = useState(new Set());
+	const [completedScenarios, setCompletedScenarios] = useState(() => {
+		// Initialize from localStorage if available
+		try {
+			const saved = localStorage.getItem("allianceDemo_completedScenarios");
+			if (saved) {
+				const parsed = JSON.parse(saved);
+				return new Set(parsed);
+			}
+		} catch (error) {
+			console.warn(
+				"Failed to load completed scenarios from localStorage:",
+				error
+			);
+		}
+		return new Set();
+	});
 	const [videoManuallyStarted, setVideoManuallyStarted] = useState(false);
 	const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
 	const [showMouseCoords, setShowMouseCoords] = useState(false);
@@ -373,6 +388,42 @@ const ControllerView = () => {
 					}
 				}
 			}
+		} else {
+			// Reset everything when demo is reset (matches DisplayView behavior)
+			console.log("🔄 Demo reset detected - resetting controller state");
+			setCurrentScenario(null);
+			setCurrentStep(null);
+			setAdminClickCount(0);
+			setShowAdminFeedback(false);
+			setButtonFeedback({});
+			setShowZones(false);
+			setImageLoaded(false);
+			setShowPreVideoButton(false);
+			setShowPostVideoButton(false);
+			setShowNonVideoButton(false);
+			// Note: NOT resetting completedScenarios here - they should persist
+			setVideoManuallyStarted(false);
+			setShowMouseCoords(false);
+			setIsDragging(false);
+			setSelectionRect(null);
+			setScrollableReportState({
+				scrollPosition: 0,
+				isDragging: false,
+				dragStartY: 0,
+				scrollProgress: 0,
+				isScrollComplete: false,
+			});
+			setScenario6Step14State({
+				showSecondImage: false,
+				startAnimation: false,
+			});
+			setIsPreloading(false);
+			setPreloadComplete(false);
+			// Clear image preloader cache
+			imagePreloader.clear();
+			// Reset refs
+			continueButtonTriggeredRef.current = false;
+			videoHasStartedRef.current = false;
 		}
 	}, [demoState]);
 
@@ -566,6 +617,23 @@ const ControllerView = () => {
 	useEffect(() => {
 		console.log("showZones changed to:", showZones);
 	}, [showZones]);
+
+	// Persist completed scenarios to localStorage
+	useEffect(() => {
+		try {
+			const scenariosArray = Array.from(completedScenarios);
+			localStorage.setItem(
+				"allianceDemo_completedScenarios",
+				JSON.stringify(scenariosArray)
+			);
+			console.log("Persisted completed scenarios:", scenariosArray);
+		} catch (error) {
+			console.warn(
+				"Failed to save completed scenarios to localStorage:",
+				error
+			);
+		}
+	}, [completedScenarios]);
 
 	// Mouse coordinate tracking for debugging image mapper positions
 	const handleMouseMove = (e) => {
@@ -815,6 +883,25 @@ const ControllerView = () => {
 		startScenario(scenarioId);
 	};
 
+	const handleAdminBackToScenarios = async () => {
+		// Play tap sound for admin navigation
+		await audioFeedback.init();
+		audioFeedback.playTap();
+
+		// Clear preloader cache when going back to scenarios
+		imagePreloader.clear();
+		setIsPreloading(false);
+		setPreloadComplete(false);
+
+		// Reset the demo state via socket (but don't affect completion states)
+		adminReset();
+		// Reset local state to show scenario selector
+		setCurrentScenario(null);
+		setCurrentStep(null);
+		setAdminClickCount(0);
+		setShowAdminFeedback(false);
+	};
+
 	const handleBackToScenarios = async (scenarioCompleted = false) => {
 		// Play tap sound for back navigation
 		await audioFeedback.init();
@@ -833,8 +920,8 @@ const ControllerView = () => {
 				newCompleted.add(currentScenario.id);
 				console.log("Updated completed scenarios:", Array.from(newCompleted));
 
-				// Auto-reset if all 5 scenarios are complete
-				if (newCompleted.size >= 5) {
+				// Auto-reset if all 6 scenarios are complete
+				if (newCompleted.size >= 6) {
 					console.log("All scenarios complete, resetting");
 					return new Set(); // Reset all completions
 				}
@@ -867,6 +954,14 @@ const ControllerView = () => {
 		console.log(
 			"🔄 Reset Menu: Performing FULL cache bust (including code)..."
 		);
+
+		// Clear completed scenarios from localStorage before reload
+		try {
+			localStorage.removeItem("allianceDemo_completedScenarios");
+			console.log("Cleared completed scenarios from localStorage");
+		} catch (error) {
+			console.warn("Failed to clear localStorage:", error);
+		}
 
 		// Perform full cache bust - this will reload the page
 		await cacheBuster.fullCacheBust();
@@ -1013,7 +1108,7 @@ const ControllerView = () => {
 
 					<button
 						className="admin-reset-button"
-						onClick={handleBackToScenarios}
+						onClick={handleAdminBackToScenarios}
 						aria-label="Admin reset"
 					></button>
 				</div>
@@ -1541,7 +1636,6 @@ const ControllerView = () => {
 																			willChange: "contents",
 																			contain: "layout",
 																			zIndex: 100,
-																			
 																		}}
 																		onMouseDown={handleReportMouseDown}
 																		onTouchStart={handleReportTouchStart}
@@ -2091,7 +2185,7 @@ const ControllerView = () => {
 				{/* Invisible admin reset button in bottom right */}
 				<button
 					className="admin-reset-button"
-					onClick={handleBackToScenarios}
+					onClick={handleAdminBackToScenarios}
 					aria-label="Admin reset"
 				></button>
 			</div>

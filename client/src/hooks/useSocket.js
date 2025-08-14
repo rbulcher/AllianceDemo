@@ -10,32 +10,103 @@ console.log("🔗 Socket connecting to:", SERVER_URL);
 export const useSocket = (deviceType = "controller") => {
 	const [socket, setSocket] = useState(null);
 	const [isConnected, setIsConnected] = useState(false);
+	const [connectionAttempts, setConnectionAttempts] = useState(0);
 	const [demoState, setDemoState] = useState({
 		currentScenario: null,
 		currentStep: 0,
 		isVideoPlaying: false,
 	});
 	const socketRef = useRef(null);
+	const reconnectTimeoutRef = useRef(null);
+	const maxReconnectAttempts = 10; // Limit reconnection attempts
+	const reconnectDelay = 3000; // 3 seconds
+
+	// Helper function to attempt reconnection
+	const attemptReconnection = () => {
+		if (connectionAttempts < maxReconnectAttempts) {
+			console.log(`🔄 Attempting reconnection (${connectionAttempts + 1}/${maxReconnectAttempts})...`);
+			setConnectionAttempts(prev => prev + 1);
+			
+			reconnectTimeoutRef.current = setTimeout(() => {
+				if (socketRef.current) {
+					socketRef.current.connect();
+				}
+			}, reconnectDelay);
+		} else {
+			console.log('❌ Max reconnection attempts reached. Manual refresh may be required.');
+		}
+	};
 
 	useEffect(() => {
-		// Create socket connection with proper security settings
-		const socketOptions = getSocketOptions();
+		// Create socket connection with enhanced options for tradeshow environment
+		const socketOptions = {
+			...getSocketOptions(),
+			timeout: 10000, // 10 second connection timeout
+			forceNew: true, // Always create a new connection
+			reconnection: true, // Enable auto-reconnection
+			reconnectionAttempts: 5, // Built-in socket.io reconnection attempts
+			reconnectionDelay: 2000, // Start with 2 second delay
+			reconnectionDelayMax: 5000, // Max 5 second delay
+			randomizationFactor: 0.5, // Add some randomization to avoid thundering herd
+		};
+		
 		const newSocket = io(SERVER_URL, socketOptions);
 		socketRef.current = newSocket;
 		setSocket(newSocket);
 
-		// Register device type
-		newSocket.emit("register-device", deviceType);
+		// Register device type on successful connection
+		const registerDevice = () => {
+			newSocket.emit("register-device", deviceType);
+			console.log(`📱 Registered as ${deviceType}`);
+		};
 
 		// Connection event handlers
 		newSocket.on("connect", () => {
 			console.log(`✅ Connected to server as ${deviceType}`);
 			setIsConnected(true);
+			setConnectionAttempts(0); // Reset connection attempts on successful connection
+			
+			// Clear any pending reconnection timeout
+			if (reconnectTimeoutRef.current) {
+				clearTimeout(reconnectTimeoutRef.current);
+				reconnectTimeoutRef.current = null;
+			}
+			
+			registerDevice();
 		});
 
-		newSocket.on("disconnect", () => {
-			console.log(`❌ Disconnected from server`);
+		newSocket.on("disconnect", (reason) => {
+			console.log(`❌ Disconnected from server. Reason: ${reason}`);
 			setIsConnected(false);
+			
+			// Only attempt manual reconnection for certain disconnect reasons
+			// Let socket.io handle automatic reconnection for transport issues
+			if (reason === 'io server disconnect' || reason === 'io client disconnect') {
+				console.log('🔄 Server or client initiated disconnect, attempting manual reconnection...');
+				attemptReconnection();
+			}
+		});
+
+		// Handle reconnection attempts
+		newSocket.on("reconnect_attempt", (attemptNumber) => {
+			console.log(`🔄 Socket.io reconnection attempt ${attemptNumber}`);
+		});
+
+		newSocket.on("reconnect", (attemptNumber) => {
+			console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+			setConnectionAttempts(0);
+			registerDevice(); // Re-register device after reconnection
+		});
+
+		newSocket.on("reconnect_failed", () => {
+			console.log('❌ Socket.io auto-reconnection failed, trying manual reconnection...');
+			attemptReconnection();
+		});
+
+		// Handle connection errors
+		newSocket.on("connect_error", (error) => {
+			console.log(`❌ Connection error: ${error.message}`);
+			// Don't attempt reconnection on connect_error - let socket.io handle it
 		});
 
 		// Demo state updates
@@ -99,56 +170,74 @@ export const useSocket = (deviceType = "controller") => {
 
 		// Cleanup on unmount
 		return () => {
+			// Clear any pending reconnection timeout
+			if (reconnectTimeoutRef.current) {
+				clearTimeout(reconnectTimeoutRef.current);
+			}
 			newSocket.close();
 		};
 	}, [deviceType]);
 
-	// Socket methods
-	const startScenario = (scenarioId, options = {}) => {
-		if (socket) {
-			socket.emit("start-scenario", { scenarioId, ...options });
+	// Enhanced socket methods with connection checking and queuing
+	const safeEmit = (eventName, data) => {
+		if (socket && isConnected) {
+			socket.emit(eventName, data);
+			return true;
+		} else {
+			console.warn(`⚠️ Cannot emit '${eventName}' - socket not connected. Event queued for retry.`);
+			// For tradeshow environment, we'll retry once after a short delay
+			setTimeout(() => {
+				if (socket && isConnected) {
+					console.log(`🔄 Retrying queued event: ${eventName}`);
+					socket.emit(eventName, data);
+				}
+			}, 1000);
+			return false;
 		}
+	};
+
+	const startScenario = (scenarioId, options = {}) => {
+		safeEmit("start-scenario", { scenarioId, ...options });
 	};
 
 	const nextStep = (stepData) => {
-		if (socket) {
-			socket.emit("next-step", stepData);
-		}
+		safeEmit("next-step", stepData);
 	};
 
 	const videoStarted = (videoData) => {
-		if (socket) {
-			socket.emit("video-started", videoData);
-		}
+		safeEmit("video-started", videoData);
 	};
 
 	const videoEnded = (videoData) => {
-		if (socket) {
-			socket.emit("video-ended", videoData);
-		}
+		safeEmit("video-ended", videoData);
 	};
 
 	const adminReset = () => {
-		if (socket) {
-			socket.emit("admin-reset");
-		}
+		safeEmit("admin-reset");
 	};
 
 	const adminGotoStep = (stepNumber) => {
-		if (socket) {
-			socket.emit("admin-goto-step", stepNumber);
-		}
+		safeEmit("admin-goto-step", stepNumber);
 	};
 
 	const playVideo = (videoData) => {
-		if (socket) {
-			socket.emit("play-video-manual", videoData);
+		safeEmit("play-video-manual", videoData);
+	};
+
+	// Manual reconnection trigger for emergency use
+	const forceReconnect = () => {
+		console.log("🔄 Force reconnecting...");
+		setConnectionAttempts(0); // Reset attempts counter
+		if (socketRef.current) {
+			socketRef.current.disconnect();
+			socketRef.current.connect();
 		}
 	};
 
 	return {
 		socket,
 		isConnected,
+		connectionAttempts,
 		demoState,
 		startScenario,
 		nextStep,
@@ -157,5 +246,6 @@ export const useSocket = (deviceType = "controller") => {
 		adminReset,
 		adminGotoStep,
 		playVideo,
+		forceReconnect, // Emergency reconnection method
 	};
 };

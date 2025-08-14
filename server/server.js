@@ -2,6 +2,8 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const { connectDB } = require("./config/database");
+const AnalyticsService = require("./services/analyticsService");
 
 const app = express();
 const server = http.createServer(app);
@@ -16,12 +18,22 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 5000;
 
+// Initialize analytics service
+let analyticsService;
+
+// Initialize database and analytics service
+const initializeServices = async () => {
+	await connectDB();
+	analyticsService = new AnalyticsService();
+	console.log("📊 Analytics service initialized");
+};
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Serve static files (videos now served from Cloud Storage)
-app.use(express.static('public'));
+app.use(express.static("public"));
 
 // Store current demo state
 let demoState = {
@@ -31,8 +43,12 @@ let demoState = {
 	connectedDevices: {
 		display: null,
 		controller: null,
+		admin: null,
 	},
 };
+
+// Connected devices tracking for analytics
+let connectedDevicesForAnalytics = [];
 
 // Socket.IO connection handling
 io.on("connection", (socket) => {
@@ -42,9 +58,32 @@ io.on("connection", (socket) => {
 	socket.on("register-device", (deviceType) => {
 		console.log(`📱 Device registered as: ${deviceType}`);
 		demoState.connectedDevices[deviceType] = socket.id;
+		socket.deviceType = deviceType; // Store for later reference
+
+		// Add to analytics tracking
+		const deviceInfo = {
+			id: socket.id,
+			type: deviceType,
+			connectedAt: new Date(),
+			lastActive: new Date(),
+		};
+
+		// Remove existing device of same type and add new one
+		connectedDevicesForAnalytics = connectedDevicesForAnalytics.filter(
+			(d) => d.type !== deviceType
+		);
+		connectedDevicesForAnalytics.push(deviceInfo);
+
+		// Notify admin panels about device connection
+		io.to("admin-room").emit("device-connected", deviceInfo);
 
 		// Send current state to newly connected device
 		socket.emit("state-update", demoState);
+
+		// If this is an admin device, add to admin room
+		if (deviceType === "admin") {
+			socket.join("admin-room");
+		}
 	});
 
 	// Scenario control from controller
@@ -53,9 +92,41 @@ io.on("connection", (socket) => {
 		const options = typeof data === "string" ? {} : data;
 
 		console.log(`🎬 Starting scenario: ${scenarioId}`, options);
+		console.log(`📊 Analytics service available: ${!!analyticsService}`);
 		demoState.currentScenario = scenarioId;
 		demoState.currentStep = 0;
 		demoState.isVideoPlaying = false;
+
+		// Record in analytics database
+		if (analyticsService) {
+			analyticsService
+				.recordScenarioStart(scenarioId)
+				.then(async (result) => {
+					if (result.success) {
+						console.log(`📊 Analytics recorded for scenario: ${scenarioId}`);
+						// Send updated analytics to admin panels - get complete data
+						const allAnalytics = await analyticsService.getAllAnalytics();
+						if (allAnalytics.success) {
+							allAnalytics.data.connectedDevices = connectedDevicesForAnalytics;
+							console.log(
+								`📡 Sending analytics update to admin room with data:`,
+								{
+									totalScenarios: allAnalytics.data.totalScenarios,
+									scenarioStats: allAnalytics.data.scenarioStats,
+								}
+							);
+							io.to("admin-room").emit("analytics-update", allAnalytics.data);
+						}
+					} else {
+						console.error("❌ Analytics recording failed:", result.error);
+					}
+				})
+				.catch((error) => {
+					console.error("❌ Failed to record analytics:", error);
+				});
+		} else {
+			console.warn("⚠️ Analytics service not available");
+		}
 
 		// Always broadcast normally - no auto-play videos
 		io.emit("scenario-started", {
@@ -125,14 +196,37 @@ io.on("connection", (socket) => {
 			io.emit("step-updated", {
 				stepNumber: demoState.currentStep,
 				videoEnded: true,
-				readyForInteraction: true
+				readyForInteraction: true,
 			});
 		}
 	});
 
 	// Admin controls
-	socket.on("admin-reset", () => {
+	socket.on("admin-reset", async () => {
 		console.log("🔄 Admin reset triggered");
+
+		// Record scenario completion if there was an active scenario
+		if (demoState.currentScenario && analyticsService) {
+			try {
+				const result = await analyticsService.recordScenarioCompletion(
+					demoState.currentScenario
+				);
+				if (result.success) {
+					console.log(
+						`📊 Analytics recorded completion for scenario: ${demoState.currentScenario}`
+					);
+					// Send updated analytics to admin panels
+					const allAnalytics = await analyticsService.getAllAnalytics();
+					if (allAnalytics.success) {
+						allAnalytics.data.connectedDevices = connectedDevicesForAnalytics;
+						io.to("admin-room").emit("analytics-update", allAnalytics.data);
+					}
+				}
+			} catch (error) {
+				console.error("❌ Failed to record scenario completion:", error);
+			}
+		}
+
 		demoState = {
 			currentScenario: null,
 			currentStep: 0,
@@ -148,6 +242,51 @@ io.on("connection", (socket) => {
 		io.emit("step-jumped", { stepNumber });
 	});
 
+	// Analytics endpoints for admin
+	socket.on("admin-get-analytics", async () => {
+		if (socket.deviceType === "admin" && analyticsService) {
+			try {
+				const result = await analyticsService.getAllAnalytics();
+				if (result.success) {
+					// Add current connected devices
+					result.data.connectedDevices = connectedDevicesForAnalytics;
+					socket.emit("analytics-update", result.data);
+				}
+			} catch (error) {
+				console.error("❌ Error getting analytics:", error);
+			}
+		}
+	});
+
+	socket.on("admin-get-system-stats", async () => {
+		if (socket.deviceType === "admin") {
+			const stats = {
+				uptime: process.uptime(),
+				memory: process.memoryUsage().heapUsed,
+				status: "healthy",
+			};
+			socket.emit("system-stats", stats);
+
+			// Update database with current uptime
+			if (analyticsService) {
+				analyticsService.updateSystemUptime(process.uptime());
+			}
+		}
+	});
+
+	socket.on("admin-get-connected-devices", () => {
+		if (socket.deviceType === "admin") {
+			socket.emit("device-list", connectedDevicesForAnalytics);
+		}
+	});
+
+	socket.on("admin-clear-errors", () => {
+		if (socket.deviceType === "admin") {
+			// For now, just acknowledge - could implement error logging later
+			socket.emit("errors-cleared");
+		}
+	});
+
 	// Handle disconnection
 	socket.on("disconnect", () => {
 		console.log(`📴 Device disconnected: ${socket.id}`);
@@ -158,6 +297,18 @@ io.on("connection", (socket) => {
 				demoState.connectedDevices[deviceType] = null;
 			}
 		});
+
+		// Remove from analytics tracking
+		const deviceInfo = connectedDevicesForAnalytics.find(
+			(d) => d.id === socket.id
+		);
+		if (deviceInfo) {
+			connectedDevicesForAnalytics = connectedDevicesForAnalytics.filter(
+				(d) => d.id !== socket.id
+			);
+			// Notify admin panels about device disconnection
+			io.to("admin-room").emit("device-disconnected", socket.id);
+		}
 	});
 });
 
@@ -175,7 +326,23 @@ app.get("/api/status", (req, res) => {
 	});
 });
 
-app.post("/api/reset", (req, res) => {
+app.post("/api/reset", async (req, res) => {
+	// Record scenario completion if there was an active scenario
+	if (demoState.currentScenario && analyticsService) {
+		try {
+			const result = await analyticsService.recordScenarioCompletion(
+				demoState.currentScenario
+			);
+			if (result.success) {
+				console.log(
+					`📊 Analytics recorded completion for scenario: ${demoState.currentScenario}`
+				);
+			}
+		} catch (error) {
+			console.error("❌ Failed to record scenario completion:", error);
+		}
+	}
+
 	demoState = {
 		currentScenario: null,
 		currentStep: 0,
@@ -197,20 +364,89 @@ app.get("/health", (req, res) => {
 	});
 });
 
-// Catch-all handler: send back React's index.html file for client-side routing
-const path = require('path');
-app.get('*', (req, res) => {
-	res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// REST API endpoints for analytics
+app.get("/api/analytics", async (req, res) => {
+	if (analyticsService) {
+		try {
+			const result = await analyticsService.getAllAnalytics();
+			if (result.success) {
+				// Add current connected devices
+				result.data.connectedDevices = connectedDevicesForAnalytics;
+				res.json(result.data);
+			} else {
+				res.status(500).json({ error: result.error });
+			}
+		} catch (error) {
+			res.status(500).json({ error: error.message });
+		}
+	} else {
+		res.status(503).json({ error: "Analytics service not initialized" });
+	}
 });
 
-server.listen(PORT, () => {
-	console.log(`✅ Alliance Demo Server running on port ${PORT}`);
-	console.log(`🌐 Local URLs:`);
-	console.log(`   Display: http://localhost:${PORT}/display`);
-	console.log(`   Controller: http://localhost:${PORT}/controller`);
-	console.log(`   Admin: http://localhost:${PORT}/admin`);
-	console.log(`📱 Network URLs (for iPad/mobile):`);
-	console.log(`   Display: http://192.168.86.31:${PORT}/display`);
-	console.log(`   Controller: http://192.168.86.31:${PORT}/controller`);
-	console.log(`   Admin: http://192.168.86.31:${PORT}/admin`);
+app.get("/api/analytics/:date", async (req, res) => {
+	if (analyticsService) {
+		try {
+			const result = await analyticsService.getAnalyticsForDate(
+				req.params.date
+			);
+			if (result.success) {
+				res.json(result.data);
+			} else {
+				res.status(500).json({ error: result.error });
+			}
+		} catch (error) {
+			res.status(500).json({ error: error.message });
+		}
+	} else {
+		res.status(503).json({ error: "Analytics service not initialized" });
+	}
 });
+
+app.delete("/api/analytics", async (req, res) => {
+	if (analyticsService) {
+		try {
+			const result = await analyticsService.clearAllAnalytics();
+			if (result.success) {
+				res.json({ success: true, message: "All analytics data cleared" });
+			} else {
+				res.status(500).json({ error: result.error });
+			}
+		} catch (error) {
+			res.status(500).json({ error: error.message });
+		}
+	} else {
+		res.status(503).json({ error: "Analytics service not initialized" });
+	}
+});
+
+// Catch-all handler: send back React's index.html file for client-side routing
+const path = require("path");
+app.get("*", (req, res) => {
+	res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Initialize services and start server
+const startServer = async () => {
+	try {
+		await initializeServices();
+
+		server.listen(PORT, () => {
+			console.log(`✅ Alliance Demo Server running on port ${PORT}`);
+			console.log(`🌐 Local URLs:`);
+			console.log(`   Display: http://localhost:${PORT}/display`);
+			console.log(`   Controller: http://localhost:${PORT}/controller`);
+			console.log(`   Admin: http://localhost:${PORT}/admin`);
+			console.log(`📱 Network URLs (for iPad/mobile):`);
+			console.log(`   Display: http://192.168.86.31:${PORT}/display`);
+			console.log(`   Controller: http://192.168.86.31:${PORT}/controller`);
+			console.log(`   Admin: http://192.168.86.31:${PORT}/admin`);
+			console.log(`📊 MongoDB analytics enabled`);
+		});
+	} catch (error) {
+		console.error("❌ Failed to start server:", error);
+		process.exit(1);
+	}
+};
+
+startServer();
