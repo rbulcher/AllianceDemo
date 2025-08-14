@@ -24,7 +24,9 @@ class AnalyticsService {
 				console.log("📊 Loaded existing system analytics");
 			}
 		} catch (error) {
-			console.error("❌ Error initializing analytics service:", error);
+			console.error("❌ Error initializing analytics service:", error.message);
+			console.log("🔄 Analytics service will run in offline mode");
+			this.systemAnalytics = null;
 		}
 	}
 
@@ -36,6 +38,14 @@ class AnalyticsService {
 	// Record a scenario start
 	async recordScenarioStart(scenarioId) {
 		try {
+			// Skip if database is not available
+			if (!this.systemAnalytics) {
+				console.log(
+					`📊 Skipping analytics recording (offline mode): ${scenarioId}`
+				);
+				return { success: false, offline: true };
+			}
+
 			const today = this.getTodayDateString();
 			const now = new Date();
 
@@ -125,14 +135,23 @@ class AnalyticsService {
 				success: true,
 			};
 		} catch (error) {
-			console.error("❌ Error recording scenario start:", error);
-			return { success: false, error: error.message };
+			console.error("❌ Error recording scenario start:", error.message);
+			console.log("🔄 Continuing in offline mode...");
+			return { success: false, error: error.message, offline: true };
 		}
 	}
 
 	// Record a scenario completion
 	async recordScenarioCompletion(scenarioId) {
 		try {
+			// Skip if database is not available
+			if (!this.systemAnalytics) {
+				console.log(
+					`📊 Skipping completion recording (offline mode): ${scenarioId}`
+				);
+				return { success: false, offline: true };
+			}
+
 			const today = this.getTodayDateString();
 			const now = new Date();
 
@@ -189,14 +208,28 @@ class AnalyticsService {
 				systemAnalytics: this.systemAnalytics,
 			};
 		} catch (error) {
-			console.error("❌ Error recording scenario completion:", error);
-			return { success: false, error: error.message };
+			console.error("❌ Error recording scenario completion:", error.message);
+			console.log("🔄 Continuing in offline mode...");
+			return { success: false, error: error.message, offline: true };
 		}
 	}
 
 	// Get all analytics data
 	async getAllAnalytics() {
 		try {
+			// Return empty data if offline
+			if (!this.systemAnalytics) {
+				console.log("📊 Returning empty analytics (offline mode)");
+				return {
+					dailyData: {},
+					totalScenarios: 0,
+					totalSessions: 0,
+					systemUptime: Math.floor(process.uptime()),
+					lastActivity: null,
+					offline: true,
+				};
+			}
+
 			const dailyData = await DailyAnalytics.find({}).sort({ date: -1 }); // Most recent first
 			const systemData = await SystemAnalytics.findOne({ id: "system" });
 
@@ -251,8 +284,17 @@ class AnalyticsService {
 				},
 			};
 		} catch (error) {
-			console.error("❌ Error getting analytics:", error);
-			return { success: false, error: error.message };
+			console.error("❌ Error getting analytics:", error.message);
+			console.log("🔄 Returning empty analytics (offline mode)");
+			return {
+				dailyData: {},
+				totalScenarios: 0,
+				totalSessions: 0,
+				systemUptime: Math.floor(process.uptime()),
+				lastActivity: null,
+				offline: true,
+				error: error.message,
+			};
 		}
 	}
 

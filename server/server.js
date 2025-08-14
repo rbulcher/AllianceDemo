@@ -5,6 +5,9 @@ const cors = require("cors");
 const { connectDB } = require("./config/database");
 const AnalyticsService = require("./services/analyticsService");
 
+// Load environment variables
+require("dotenv").config();
+
 const app = express();
 const server = http.createServer(app);
 
@@ -17,15 +20,35 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 5000;
+const HOST_IP = process.env.HOST_IP || "localhost";
 
 // Initialize analytics service
 let analyticsService;
+let isOfflineMode = false;
 
 // Initialize database and analytics service
 const initializeServices = async () => {
-	await connectDB();
-	analyticsService = new AnalyticsService();
-	console.log("📊 Analytics service initialized");
+	try {
+		console.log("🚀 Initializing services...");
+		const dbConnection = await connectDB();
+
+		if (dbConnection) {
+			// Database connected successfully
+			analyticsService = new AnalyticsService();
+			console.log("📊 Analytics service initialized");
+			console.log("🌐 Running in ONLINE MODE with database analytics");
+		} else {
+			// Database failed to connect
+			isOfflineMode = true;
+			analyticsService = null;
+			console.log("🔄 Running in OFFLINE MODE - analytics disabled");
+		}
+	} catch (error) {
+		console.error("❌ Error initializing services:", error);
+		isOfflineMode = true;
+		analyticsService = null;
+		console.log("🔄 Falling back to OFFLINE MODE - analytics disabled");
+	}
 };
 
 // Middleware
@@ -366,21 +389,44 @@ app.get("/health", (req, res) => {
 
 // REST API endpoints for analytics
 app.get("/api/analytics", async (req, res) => {
-	if (analyticsService) {
-		try {
-			const result = await analyticsService.getAllAnalytics();
-			if (result.success) {
-				// Add current connected devices
-				result.data.connectedDevices = connectedDevicesForAnalytics;
-				res.json(result.data);
-			} else {
-				res.status(500).json({ error: result.error });
-			}
-		} catch (error) {
-			res.status(500).json({ error: error.message });
+	if (isOfflineMode || !analyticsService) {
+		// Return minimal data for offline mode
+		console.log("📊 Serving offline analytics data");
+		res.json({
+			dailyData: {},
+			totalScenarios: 0,
+			totalSessions: 0,
+			systemUptime: Math.floor(process.uptime()),
+			lastActivity: null,
+			connectedDevices: connectedDevicesForAnalytics,
+			offline: true,
+		});
+		return;
+	}
+
+	try {
+		const result = await analyticsService.getAllAnalytics();
+		if (result.success || result.offline) {
+			// Add current connected devices
+			const data = result.data || result;
+			data.connectedDevices = connectedDevicesForAnalytics;
+			res.json(data);
+		} else {
+			res.status(500).json({ error: result.error });
 		}
-	} else {
-		res.status(503).json({ error: "Analytics service not initialized" });
+	} catch (error) {
+		console.error("❌ Analytics API error:", error.message);
+		// Fallback to offline mode response
+		res.json({
+			dailyData: {},
+			totalScenarios: 0,
+			totalSessions: 0,
+			systemUptime: Math.floor(process.uptime()),
+			lastActivity: null,
+			connectedDevices: connectedDevicesForAnalytics,
+			offline: true,
+			error: error.message,
+		});
 	}
 });
 
@@ -433,14 +479,19 @@ const startServer = async () => {
 
 		server.listen(PORT, () => {
 			console.log(`✅ Alliance Demo Server running on port ${PORT}`);
+			if (isOfflineMode) {
+				console.log(`🔄 Running in OFFLINE MODE - analytics disabled`);
+			} else {
+				console.log(`🌐 Running in ONLINE MODE with database analytics`);
+			}
 			console.log(`🌐 Local URLs:`);
 			console.log(`   Display: http://localhost:${PORT}/display`);
 			console.log(`   Controller: http://localhost:${PORT}/controller`);
 			console.log(`   Admin: http://localhost:${PORT}/admin`);
 			console.log(`📱 Network URLs (for iPad/mobile):`);
-			console.log(`   Display: http://192.168.86.31:${PORT}/display`);
-			console.log(`   Controller: http://192.168.86.31:${PORT}/controller`);
-			console.log(`   Admin: http://192.168.86.31:${PORT}/admin`);
+			console.log(`   Display: http://${HOST_IP}:${PORT}/display`);
+			console.log(`   Controller: http://${HOST_IP}:${PORT}/controller`);
+			console.log(`   Admin: http://${HOST_IP}:${PORT}/admin`);
 			console.log(`📊 MongoDB analytics enabled`);
 		});
 	} catch (error) {

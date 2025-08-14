@@ -79,16 +79,22 @@ const AdminPanel = () => {
 				const response = await fetch("/api/analytics");
 				if (response.ok) {
 					const data = await response.json();
-					console.log("✅ Loaded persistent analytics:", data);
+					if (data.offline) {
+						console.log("🔄 Running in offline mode - analytics disabled");
+					} else {
+						console.log("✅ Loaded persistent analytics:", data);
+					}
 					setAnalytics((prev) => ({ ...prev, ...data }));
 				} else {
 					console.warn(
 						"⚠️ Failed to load persistent analytics:",
-						response.status
+						response.status,
+						"- continuing in offline mode"
 					);
 				}
 			} catch (error) {
-				console.warn("⚠️ Error loading persistent analytics:", error);
+				console.warn("⚠️ Error loading persistent analytics:", error.message);
+				console.log("🔄 Continuing in offline mode...");
 			}
 		};
 
@@ -646,7 +652,17 @@ const AdminPanel = () => {
 
 				{/* ANALYTICS DASHBOARD */}
 				<div className="admin-section">
-					<h2>Analytics Dashboard</h2>
+					<h2>
+						Analytics Dashboard
+						{analytics.offline && (
+							<span className="offline-indicator"> (Offline Mode)</span>
+						)}
+					</h2>
+					{analytics.offline && (
+						<div className="offline-notice">
+							<p>⚠️ Analytics are disabled - running in offline mode</p>
+						</div>
+					)}
 					<div className="daily-analytics-container">
 						{getSortedDailyData().length > 0 ? (
 							getSortedDailyData().map(([dateString, dayData]) => (
@@ -660,8 +676,16 @@ const AdminPanel = () => {
 							))
 						) : (
 							<div className="no-daily-data">
-								<h3>No analytics data yet</h3>
-								<p>Start a scenario to begin tracking daily analytics</p>
+								<h3>
+									{analytics.offline
+										? "Analytics disabled in offline mode"
+										: "No analytics data yet"}
+								</h3>
+								<p>
+									{analytics.offline
+										? "Database connection unavailable"
+										: "Start a scenario to begin tracking daily analytics"}
+								</p>
 							</div>
 						)}
 					</div>

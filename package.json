@@ -4,6 +4,7 @@
 	"description": "Interactive tradeshow demo for Alliance washing machines",
 	"main": "index.js",
 	"scripts": {
+		"setup": "node setup.js",
 		"install-all": "npm install && cd client && npm install && cd ../server && npm install",
 		"dev": "concurrently \"npm run server\" \"npm run client\"",
 		"server": "cd server && npm run dev",
