@@ -251,20 +251,45 @@ const ControllerView = () => {
 			if (demoState._isReconnection) {
 				console.log("🔄 Reconnection detected - resetting all component state");
 				
-				// Reset all UI state
+				// Reset UI state but preserve video flow state
 				setImageLoaded(false);
 				setShowZones(false);
-				setShowPreVideoButton(false);
-				setShowPostVideoButton(false);
-				setShowNonVideoButton(false);
 				setButtonFeedback({});
-				setVideoManuallyStarted(false);
 				setIsPreloading(false);
 				setPreloadComplete(false);
 				
-				// Reset refs
-				continueButtonTriggeredRef.current = false;
-				videoHasStartedRef.current = false;
+				// For video steps, preserve video state to avoid showing wrong buttons
+				const currentStepData = scenario?.steps[demoState.currentStep];
+				if (currentStepData?.videoAsset && currentStepData?.type === "controller-message") {
+					console.log("🔄 RECONNECTION: Preserving video state for video step");
+					// Don't reset video-related state - preserve the flow
+					// setVideoManuallyStarted(false); ← REMOVED - this was breaking video flow
+					// videoHasStartedRef.current = false; ← REMOVED - this was breaking video flow
+					
+					// For video steps, show post-video button if video isn't playing
+					if (!demoState.isVideoPlaying) {
+						console.log("🔄 RECONNECTION: Video step + not playing = show post-video button");
+						setShowPreVideoButton(false);
+						setShowPostVideoButton(true);
+						setShowNonVideoButton(false);
+						continueButtonTriggeredRef.current = true;
+					} else {
+						console.log("🔄 RECONNECTION: Video step + playing = reset buttons");
+						setShowPreVideoButton(false);
+						setShowPostVideoButton(false);
+						setShowNonVideoButton(false);
+						continueButtonTriggeredRef.current = false;
+					}
+				} else {
+					console.log("🔄 RECONNECTION: Non-video step - full reset OK");
+					// For non-video steps, full reset is fine
+					setShowPreVideoButton(false);
+					setShowPostVideoButton(false);
+					setShowNonVideoButton(false);
+					setVideoManuallyStarted(false);
+					continueButtonTriggeredRef.current = false;
+					videoHasStartedRef.current = false;
+				}
 				
 				// Reset scrollable report state
 				setScrollableReportState({
