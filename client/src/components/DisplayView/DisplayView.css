@@ -135,8 +135,7 @@
 
 .idle-video-container {
   position: relative;
-  width: 90%; /* Add side spacing instead of full width */
-  max-width: 1600px; /* Moderately larger than scenario videos (1400px) */
+  width: 95%; /* 10% space on both sides */
   aspect-ratio: 16/9;
   background: #000;
   border-radius: 20px; /* Slightly larger border radius */
@@ -668,7 +667,6 @@
 
   /* Larger idle video for big screens */
   .idle-video-container {
-    max-width: 1800px; /* More reasonable size for large screens */
     border-radius: 25px;
     box-shadow: 0 30px 60px rgba(0,0,0,0.7);
   }
@@ -694,7 +692,6 @@
 
   /* Even larger idle video for ultra-wide displays */
   .idle-video-container {
-    max-width: 2000px; /* Reduced from 2400px for better proportions */
     border-radius: 30px;
     box-shadow: 0 35px 70px rgba(0,0,0,0.8);
   }
@@ -731,8 +728,7 @@
   
   /* Mobile idle video adjustments */
   .idle-video-container {
-    width: 90%; /* Maintain side spacing on mobile */
-    max-width: 95%;
+    width: 95%; /* Maintain consistent 10% spacing on each side */
     border-radius: 12px;
     box-shadow: 0 15px 30px rgba(0,0,0,0.5);
   }
