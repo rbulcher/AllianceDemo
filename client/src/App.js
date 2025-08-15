@@ -9,6 +9,7 @@ import { ROUTES } from "./utils/constants";
 import DisplayView from "./components/DisplayView/DisplayView";
 import ControllerView from "./components/ControllerView/ControllerView";
 import AdminAuth from "./components/Admin/AdminAuth";
+import ConnectionError from "./components/ConnectionError/ConnectionError";
 import ErrorBoundary from "./components/Common/ErrorBoundary";
 import "./App.css";
 
@@ -25,6 +26,7 @@ function App() {
 						<Route path={ROUTES.CONTROLLER} element={<ControllerView />} />
 						<Route path={ROUTES.DISPLAY} element={<DisplayView />} />
 						<Route path={ROUTES.ADMIN} element={<AdminAuth />} />
+						<Route path="/connection-error" element={<ConnectionError />} />
 						{/* Redirect old scenario select route to controller */}
 						<Route
 							path={ROUTES.SCENARIO_SELECT}

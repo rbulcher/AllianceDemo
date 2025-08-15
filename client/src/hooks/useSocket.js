@@ -77,7 +77,29 @@ export const useSocket = (deviceType = "controller") => {
 
 		newSocket.on("disconnect", (reason) => {
 			console.log(`❌ Disconnected from server. Reason: ${reason}`);
+			console.log(`📊 Current demo state before disconnect:`, demoState);
 			setIsConnected(false);
+			
+			// Log different disconnect reasons for debugging Cloud Run issues
+			switch(reason) {
+				case 'transport error':
+					console.log('🌐 Network transport error - likely Cloud Run timeout');
+					break;
+				case 'ping timeout':
+					console.log('⏱️ Ping timeout - server didn\'t respond to ping');
+					break;
+				case 'transport close':
+					console.log('🔌 Transport closed - connection dropped');
+					break;
+				case 'io server disconnect':
+					console.log('🖥️ Server initiated disconnect');
+					break;
+				case 'io client disconnect':
+					console.log('📱 Client initiated disconnect');
+					break;
+				default:
+					console.log(`❓ Unknown disconnect reason: ${reason}`);
+			}
 			
 			// Only attempt manual reconnection for certain disconnect reasons
 			// Let socket.io handle automatic reconnection for transport issues
@@ -96,6 +118,14 @@ export const useSocket = (deviceType = "controller") => {
 			console.log(`✅ Reconnected after ${attemptNumber} attempts`);
 			setConnectionAttempts(0);
 			registerDevice(); // Re-register device after reconnection
+			
+			// Request current state explicitly after reconnection
+			setTimeout(() => {
+				if (newSocket.connected) {
+					console.log("📡 Requesting state update after reconnection");
+					newSocket.emit("request-current-state");
+				}
+			}, 1000); // Small delay to ensure registration completes
 		});
 
 		newSocket.on("reconnect_failed", () => {
@@ -112,8 +142,8 @@ export const useSocket = (deviceType = "controller") => {
 		// Handle connection rejection (too many devices)
 		newSocket.on("connection-rejected", (data) => {
 			console.log(`❌ Connection rejected: ${data.reason}`);
-			// Redirect to error page on server with device type and reason
-			const errorUrl = `${SERVER_URL}/connection-error?device=${encodeURIComponent(data.deviceType)}&reason=${encodeURIComponent(data.reason)}`;
+			// Navigate to React error page with device type and reason
+			const errorUrl = `/connection-error?device=${encodeURIComponent(data.deviceType)}&reason=${encodeURIComponent(data.reason)}`;
 			window.location.href = errorUrl;
 		});
 
@@ -128,7 +158,9 @@ export const useSocket = (deviceType = "controller") => {
 		// Demo state updates
 		newSocket.on("state-update", (state) => {
 			console.log("📊 State update received:", state);
+			console.log("📊 Previous state:", demoState);
 			setDemoState(state);
+			console.log("✅ Demo state updated successfully");
 		});
 
 		newSocket.on("scenario-started", (data) => {

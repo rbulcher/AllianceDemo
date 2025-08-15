@@ -11,12 +11,18 @@ require("dotenv").config();
 const app = express();
 const server = http.createServer(app);
 
-// Configure Socket.IO with CORS settings for local network
+// Configure Socket.IO with CORS settings and production timeouts
 const io = new Server(server, {
 	cors: {
 		origin: "*",
 		methods: ["GET", "POST"],
 	},
+	// Production settings for Cloud Run
+	pingTimeout: 60000, // 60 seconds - how long to wait for ping response
+	pingInterval: 25000, // 25 seconds - how often to send ping packets
+	transports: ["websocket", "polling"], // Ensure fallback transport
+	upgradeTimeout: 30000, // 30 seconds for websocket upgrade
+	allowEIO3: true, // Backwards compatibility
 });
 
 const PORT = process.env.PORT || 5000;
@@ -127,7 +133,7 @@ io.on("connection", (socket) => {
 
 	// Force connect - take over existing connection
 	socket.on("force-connect", (deviceType) => {
-		console.log(`🔥 Force connect attempt: ${deviceType} from ${socket.id}`);
+		console.log(`Force connect attempt: ${deviceType} from ${socket.id}`);
 		
 		// Find and disconnect existing device of this type
 		const existingSocketId = demoState.connectedDevices[deviceType];
@@ -376,6 +382,12 @@ io.on("connection", (socket) => {
 		}
 	});
 
+	// Handle state requests (for reconnection recovery)
+	socket.on("request-current-state", () => {
+		console.log(`📡 State request from ${socket.deviceType || 'unknown'}: ${socket.id}`);
+		// Send current demo state
+		socket.emit("state-update", demoState);
+	});
 
 	// Handle disconnection
 	socket.on("disconnect", () => {
@@ -772,7 +784,8 @@ app.get("/admin-login", (req, res) => {
 		res.send(loginHtml);
 });
 
-// Connection error page for rejected devices
+// Connection error page for rejected devices (DISABLED - using React route now)
+/*
 app.get("/connection-error", (req, res) => {
 	const deviceType = req.query.device || "device";
 	const reason = req.query.reason || "Connection limit reached";
@@ -942,6 +955,7 @@ app.get("/connection-error", (req, res) => {
 	
 	res.send(errorHtml);
 });
+*/
 
 // Catch-all handler: send back React's index.html file for client-side routing
 app.get("*", (req, res) => {

@@ -16,7 +16,8 @@
 		"socket.io-client": "^4.8.1"
 	},
 	"scripts": {
-		"start": "react-scripts start",
+		"start": "BROWSER=none react-scripts start",
+		"start-windows": "set BROWSER=none && react-scripts start",
 		"build": "react-scripts build",
 		"serve": "npx serve -s build -l 3000"
 	},
