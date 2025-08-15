@@ -38,16 +38,20 @@ export const useSocket = (deviceType = "controller") => {
 	};
 
 	useEffect(() => {
-		// Create socket connection with enhanced options for tradeshow environment
+		// Create socket connection with enhanced options for Cloud Run environment
 		const socketOptions = {
 			...getSocketOptions(),
-			timeout: 10000, // 10 second connection timeout
+			timeout: 20000, // 20 second connection timeout (increased for Cloud Run)
 			forceNew: true, // Always create a new connection
 			reconnection: true, // Enable auto-reconnection
-			reconnectionAttempts: 5, // Built-in socket.io reconnection attempts
-			reconnectionDelay: 2000, // Start with 2 second delay
-			reconnectionDelayMax: 5000, // Max 5 second delay
-			randomizationFactor: 0.5, // Add some randomization to avoid thundering herd
+			reconnectionAttempts: 10, // More reconnection attempts for Cloud Run
+			reconnectionDelay: 1000, // Start with 1 second delay
+			reconnectionDelayMax: 10000, // Max 10 second delay for Cloud Run
+			randomizationFactor: 0.3, // Reduced randomization
+			// Cloud Run specific optimizations
+			transports: ['websocket', 'polling'], // Try websocket first, fallback to polling
+			upgrade: true, // Allow transport upgrades
+			rememberUpgrade: true, // Remember successful upgrades
 		};
 		
 		const newSocket = io(SERVER_URL, socketOptions);
@@ -80,16 +84,21 @@ export const useSocket = (deviceType = "controller") => {
 			console.log(`📊 Current demo state before disconnect:`, demoState);
 			setIsConnected(false);
 			
-			// Log different disconnect reasons for debugging Cloud Run issues
+			// Enhanced logging for Cloud Run debugging
 			switch(reason) {
 				case 'transport error':
 					console.log('🌐 Network transport error - likely Cloud Run timeout');
 					break;
 				case 'ping timeout':
-					console.log('⏱️ Ping timeout - server didn\'t respond to ping');
+					console.log('⏱️ Ping timeout - server didn\'t respond to ping (Cloud Run may be sleeping)');
 					break;
 				case 'transport close':
-					console.log('🔌 Transport closed - connection dropped');
+					console.log('🔌 Transport closed - connection dropped (most common Cloud Run issue)');
+					console.log('📡 Transport details:', {
+						transport: newSocket.io?.engine?.transport?.name || 'unknown',
+						readyState: newSocket.io?.engine?.readyState || 'unknown',
+						upgraded: newSocket.io?.engine?.upgraded || false,
+					});
 					break;
 				case 'io server disconnect':
 					console.log('🖥️ Server initiated disconnect');
@@ -133,6 +142,7 @@ export const useSocket = (deviceType = "controller") => {
 			attemptReconnection();
 		});
 
+
 		// Handle connection errors
 		newSocket.on("connect_error", (error) => {
 			console.log(`❌ Connection error: ${error.message}`);
@@ -159,6 +169,34 @@ export const useSocket = (deviceType = "controller") => {
 		newSocket.on("state-update", (state) => {
 			console.log("📊 State update received:", state);
 			console.log("📊 Previous state:", demoState);
+			
+			// Add reconnection flag to help components know they need to reset
+			const isReconnectionUpdate = !demoState.currentScenario && state.currentScenario;
+			console.log("🔄 Reconnection check:", {
+				previousScenario: demoState.currentScenario,
+				newScenario: state.currentScenario,
+				isReconnectionUpdate
+			});
+			
+			if (isReconnectionUpdate) {
+				console.log("🔄 State update appears to be from reconnection - flagging for component reset");
+				state._isReconnection = true;
+				console.log("🔄 Added _isReconnection flag to state:", state);
+				
+				// Clear the flag after a short delay to prevent it from affecting subsequent updates
+				setTimeout(() => {
+					setDemoState(prevState => {
+						if (prevState._isReconnection) {
+							const newState = { ...prevState };
+							delete newState._isReconnection;
+							console.log("🔄 Clearing reconnection flag");
+							return newState;
+						}
+						return prevState;
+					});
+				}, 2000);
+			}
+			
 			setDemoState(state);
 			console.log("✅ Demo state updated successfully");
 		});

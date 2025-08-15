@@ -240,9 +240,62 @@ const ControllerView = () => {
 
 	// Preload images when scenario starts
 	useEffect(() => {
+		console.log("🔍 ControllerView useEffect triggered with demoState:", demoState);
+		
 		if (demoState.currentScenario) {
 			const scenario = getScenario(demoState.currentScenario);
 			setCurrentScenario(scenario);
+			
+			// Handle reconnection - reset all component state to ensure proper UI
+			console.log("🔍 Checking for reconnection flag:", demoState._isReconnection);
+			if (demoState._isReconnection) {
+				console.log("🔄 Reconnection detected - resetting all component state");
+				
+				// Reset all UI state
+				setImageLoaded(false);
+				setShowZones(false);
+				setShowPreVideoButton(false);
+				setShowPostVideoButton(false);
+				setShowNonVideoButton(false);
+				setButtonFeedback({});
+				setVideoManuallyStarted(false);
+				setIsPreloading(false);
+				setPreloadComplete(false);
+				
+				// Reset refs
+				continueButtonTriggeredRef.current = false;
+				videoHasStartedRef.current = false;
+				
+				// Reset scrollable report state
+				setScrollableReportState({
+					scrollPosition: 0,
+					isDragging: false,
+					dragStartY: 0,
+					scrollProgress: 0,
+					isScrollComplete: false,
+				});
+				
+				// Reset scenario6 step14 state
+				setScenario6Step14State({
+					showSecondImage: false,
+					startAnimation: false,
+				});
+				
+				// Clear image preloader cache and restart
+				imagePreloader.clear();
+				
+				console.log("🔄 Component state reset complete - proceeding with normal step logic");
+				
+				// Force immediate zone display for interaction steps after reconnection
+				setTimeout(() => {
+					const step = scenario?.steps[demoState.currentStep];
+					if (step && step.useImageMapper) {
+						console.log("🔄 RECONNECTION FIX: Force enabling interaction zones for step:", step.id);
+						setImageLoaded(true);
+						setShowZones(true);
+					}
+				}, 500);
+			}
 
 			// Start preloading all scenario images immediately
 			if (scenario && !preloadComplete) {
@@ -608,16 +661,33 @@ const ControllerView = () => {
 				(preloadComplete &&
 					imagePreloader.isPreloaded(currentStep?.screenAsset)));
 
+		console.log("🔍 Zone display logic:", {
+			stepId: currentStep?.id,
+			useImageMapper: currentStep?.useImageMapper,
+			imageLoaded,
+			preloadComplete,
+			isPreloaded: imagePreloader.isPreloaded(currentStep?.screenAsset),
+			shouldShowZones,
+		});
+
 		if (shouldShowZones) {
-			console.log("Showing interaction zones for:", currentStep.id, {
-				imageLoaded,
-				preloadComplete,
-				isPreloaded: imagePreloader.isPreloaded(currentStep?.screenAsset),
-			});
+			console.log("✅ Showing interaction zones for:", currentStep.id);
 			setShowZones(true);
 		} else if (!currentStep?.useImageMapper) {
+			console.log("❌ Not showing zones - step doesn't use image mapper");
 			setShowZones(false);
 		} else {
+			console.log("❌ Not showing zones - image not loaded or preload incomplete");
+			
+			// RECONNECTION BACKUP FIX: If step needs zones but image isn't marked as loaded,
+			// force it after a delay (this handles reconnection edge cases)
+			if (currentStep?.useImageMapper && !imageLoaded && !preloadComplete) {
+				console.log("🔧 BACKUP FIX: Attempting to force image loaded state in 2 seconds");
+				setTimeout(() => {
+					console.log("🔧 BACKUP FIX: Force setting imageLoaded = true for reconnection");
+					setImageLoaded(true);
+				}, 2000);
+			}
 			setShowZones(false);
 		}
 	}, [imageLoaded, currentStep, preloadComplete]);
@@ -2200,6 +2270,32 @@ const ControllerView = () => {
 					onClick={handleAdminBackToScenarios}
 					aria-label="Admin reset"
 				></button>
+
+				{/* Emergency zone restoration button (only show if zones should be visible but aren't) */}
+				{currentStep?.useImageMapper && !showZones && (
+					<button
+						onClick={() => {
+							console.log("🚨 EMERGENCY FIX: Force enabling zones");
+							setImageLoaded(true);
+							setShowZones(true);
+						}}
+						style={{
+							position: 'fixed',
+							bottom: '100px',
+							right: '20px',
+							background: '#ff6b6b',
+							color: 'white',
+							padding: '10px',
+							borderRadius: '5px',
+							border: 'none',
+							fontSize: '12px',
+							cursor: 'pointer',
+							zIndex: 1000,
+						}}
+					>
+						🚨 Fix Zones
+					</button>
+				)}
 			</div>
 		</div>
 	);

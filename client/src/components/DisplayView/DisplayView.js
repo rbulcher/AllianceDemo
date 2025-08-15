@@ -73,6 +73,18 @@ const DisplayView = () => {
 		if (demoState.currentScenario) {
 			const scenario = getScenario(demoState.currentScenario);
 			setCurrentScenario(scenario);
+			
+			// Handle reconnection - reset display state
+			if (demoState._isReconnection) {
+				console.log("🔄 DisplayView: Reconnection detected - resetting display state");
+				setIsVideoPlaying(false);
+				setVideoEnded(false);
+				setIsVideoDelaying(false);
+				setShowEndFrameOverlay(false);
+				setPreviousStepId(null);
+				currentVideoRef.current = null;
+				console.log("🔄 DisplayView: State reset complete");
+			}
 
 			if (scenario && scenario.steps[demoState.currentStep]) {
 				const step = scenario.steps[demoState.currentStep];

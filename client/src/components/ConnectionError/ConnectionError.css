@@ -106,6 +106,121 @@
     opacity: 0.7;
 }
 
+/* Password Modal Styles */
+.password-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.password-modal {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 30px;
+    width: 350px;
+    max-width: 90vw;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+.password-modal h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #00d4ff;
+    font-size: 1.4rem;
+}
+
+.password-modal p {
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.password-modal input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+.password-modal input:focus {
+    outline: none;
+    border-color: #00d4ff;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+.password-modal input.error {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+}
+
+.password-modal input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.password-error {
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    background: rgba(255, 107, 107, 0.1);
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.password-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.cancel-btn, .submit-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cancel-btn {
+    background: rgba(108, 117, 125, 0.8);
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: rgba(108, 117, 125, 1);
+    transform: translateY(-1px);
+}
+
+.submit-btn {
+    background: linear-gradient(45deg, #00d4ff, #0099cc);
+    color: white;
+}
+
+.submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
 @media (max-width: 600px) {
     .error-container {
         width: 90vw;
@@ -122,5 +237,15 @@
     
     .force-connect-btn {
         width: 100%;
+    }
+    
+    .password-modal {
+        width: 85vw;
+        padding: 25px;
+    }
+    
+    .password-buttons {
+        flex-direction: column;
+        gap: 10px;
     }
 }

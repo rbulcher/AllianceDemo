@@ -877,12 +877,6 @@ app.get("/connection-error", (req, res) => {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
         }
-        .device-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.7;
-        }
-    </style>
 </head>
 <body>
     <div class="error-container">

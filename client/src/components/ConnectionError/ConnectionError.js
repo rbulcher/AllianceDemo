@@ -8,13 +8,36 @@ const ConnectionError = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [isConnecting, setIsConnecting] = useState(false);
+    const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+    const [password, setPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
     
     // Parse URL parameters
     const urlParams = new URLSearchParams(location.search);
     const deviceType = urlParams.get('device') || 'device';
     const reason = urlParams.get('reason') || 'Connection limit reached';
     
-    const handleForceConnect = () => {
+    const handleForceConnectClick = () => {
+        setShowPasswordPrompt(true);
+        setPassword('');
+        setPasswordError('');
+    };
+
+    const handlePasswordSubmit = (e) => {
+        e.preventDefault();
+        
+        // Check password
+        if (password !== '7913') {
+            setPasswordError('Incorrect password');
+            return;
+        }
+        
+        // Password correct, proceed with force connect
+        setShowPasswordPrompt(false);
+        performForceConnect();
+    };
+
+    const performForceConnect = () => {
         setIsConnecting(true);
         
         // Connect to server and request force connection
@@ -46,6 +69,12 @@ const ConnectionError = () => {
                 socket.disconnect();
             }
         }, 10000);
+    };
+
+    const handleCancelPassword = () => {
+        setShowPasswordPrompt(false);
+        setPassword('');
+        setPasswordError('');
     };
     
     const getDeviceIcon = () => {
@@ -80,11 +109,42 @@ const ConnectionError = () => {
                 
                 <button 
                     className={`force-connect-btn ${isConnecting ? 'connecting' : ''}`}
-                    onClick={handleForceConnect}
+                    onClick={handleForceConnectClick}
                     disabled={isConnecting}
                 >
                     {isConnecting ? 'Connecting...' : 'Force Connect '}
                 </button>
+                
+                {/* Password Prompt Modal */}
+                {showPasswordPrompt && (
+                    <div className="password-modal-overlay">
+                        <div className="password-modal">
+                            <h3>Admin Access Required</h3>
+                            <p>Enter the admin password to force connect:</p>
+                            <form onSubmit={handlePasswordSubmit}>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Enter password"
+                                    autoFocus
+                                    className={passwordError ? 'error' : ''}
+                                />
+                                {passwordError && (
+                                    <div className="password-error">{passwordError}</div>
+                                )}
+                                <div className="password-buttons">
+                                    <button type="button" onClick={handleCancelPassword} className="cancel-btn">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="submit-btn">
+                                        Connect
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
