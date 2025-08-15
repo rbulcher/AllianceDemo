@@ -10,7 +10,7 @@ import "./ControllerView.css";
 
 const ControllerView = () => {
 	// 🎯 DEBUG TOOL TOGGLE - Set to true to enable coordinate debugging
-	const ENABLE_DEBUG_TOOL = true;
+	const ENABLE_DEBUG_TOOL = false;
 
 	const {
 		demoState,

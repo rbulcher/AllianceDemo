@@ -135,7 +135,7 @@
 
 .idle-video-container {
   position: relative;
-  width: 80%; /* 10% space on both sides */
+  width: 85%; /* 10% space on both sides */
   aspect-ratio: 16/9;
   background: #000;
   border-radius: 20px; /* Slightly larger border radius */
@@ -728,7 +728,7 @@
   
   /* Mobile idle video adjustments */
   .idle-video-container {
-    width: 80%; /* Maintain consistent 10% spacing on each side */
+    width: 85%; 
     border-radius: 12px;
     box-shadow: 0 15px 30px rgba(0,0,0,0.5);
   }

@@ -849,7 +849,7 @@ export const scenarios = {
 			{
 				id: "step17",
 				type: "interaction",
-				title: "Find a customer",
+				title: "Find a Customer",
 				description: "and view their spending behavior",
 				screenAsset: "/assets/screenshots/scenario3/16.png",
 				useImageMapper: true,
@@ -869,7 +869,7 @@ export const scenarios = {
 			{
 				id: "step18",
 				type: "interaction",
-				title: "Find a customer",
+				title: "Find a Customer",
 				description: "and view their spending behavior",
 				screenAsset: "/assets/screenshots/scenario3/17.png",
 				useImageMapper: true,
