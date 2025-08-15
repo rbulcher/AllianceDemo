@@ -197,6 +197,7 @@ const AdminPanel = () => {
 				}));
 			});
 
+
 			// Cleanup listeners
 			return () => {
 				socket.off("analytics-update");
@@ -249,6 +250,7 @@ const AdminPanel = () => {
 			forceReconnect();
 		}
 	};
+
 
 	const handleClearErrors = () => {
 		setAnalytics((prev) => ({ ...prev, systemErrors: [] }));

@@ -109,6 +109,22 @@ export const useSocket = (deviceType = "controller") => {
 			// Don't attempt reconnection on connect_error - let socket.io handle it
 		});
 
+		// Handle connection rejection (too many devices)
+		newSocket.on("connection-rejected", (data) => {
+			console.log(`❌ Connection rejected: ${data.reason}`);
+			// Redirect to error page on server with device type and reason
+			const errorUrl = `${SERVER_URL}/connection-error?device=${encodeURIComponent(data.deviceType)}&reason=${encodeURIComponent(data.reason)}`;
+			window.location.href = errorUrl;
+		});
+
+		// Handle force disconnection by admin
+		newSocket.on("force-disconnected", (data) => {
+			console.log(`🔌 Force disconnected by admin: ${data.reason}`);
+			// Show a brief message then reload to reconnect
+			alert(`${data.reason}\n\nClick OK to reconnect.`);
+			window.location.reload();
+		});
+
 		// Demo state updates
 		newSocket.on("state-update", (state) => {
 			console.log("📊 State update received:", state);

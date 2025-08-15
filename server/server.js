@@ -81,7 +81,21 @@ io.on("connection", (socket) => {
 
 	// Device registration
 	socket.on("register-device", (deviceType) => {
-		console.log(`📱 Device registered as: ${deviceType}`);
+		console.log(`📱 Device registration attempt: ${deviceType}`);
+		
+		// Check if device type is already connected (limit 1 per type except admin)
+		if ((deviceType === "display" || deviceType === "controller") && 
+			demoState.connectedDevices[deviceType] !== null) {
+			console.log(`❌ ${deviceType} already connected. Rejecting: ${socket.id}`);
+			socket.emit("connection-rejected", { 
+				reason: `Maximum ${deviceType}s currently open`,
+				deviceType: deviceType
+			});
+			socket.disconnect();
+			return;
+		}
+
+		console.log(`✅ Device registered as: ${deviceType}`);
 		demoState.connectedDevices[deviceType] = socket.id;
 		socket.deviceType = deviceType; // Store for later reference
 
@@ -104,6 +118,56 @@ io.on("connection", (socket) => {
 
 		// Send current state to newly connected device
 		socket.emit("state-update", demoState);
+
+		// If this is an admin device, add to admin room
+		if (deviceType === "admin") {
+			socket.join("admin-room");
+		}
+	});
+
+	// Force connect - take over existing connection
+	socket.on("force-connect", (deviceType) => {
+		console.log(`🔥 Force connect attempt: ${deviceType} from ${socket.id}`);
+		
+		// Find and disconnect existing device of this type
+		const existingSocketId = demoState.connectedDevices[deviceType];
+		if (existingSocketId) {
+			const existingSocket = io.sockets.sockets.get(existingSocketId);
+			if (existingSocket) {
+				console.log(`🔥 Disconnecting existing ${deviceType}: ${existingSocketId}`);
+				existingSocket.emit("force-disconnected", { 
+					reason: "Another device has taken over this connection",
+					takenOver: true
+				});
+				existingSocket.disconnect();
+			}
+		}
+
+		// Register this socket as the new device
+		console.log(`✅ Force registered as: ${deviceType}`);
+		demoState.connectedDevices[deviceType] = socket.id;
+		socket.deviceType = deviceType;
+
+		// Add to analytics tracking
+		const deviceInfo = {
+			id: socket.id,
+			type: deviceType,
+			connectedAt: new Date(),
+			lastActive: new Date(),
+		};
+
+		// Remove existing device of same type and add new one
+		connectedDevicesForAnalytics = connectedDevicesForAnalytics.filter(
+			(d) => d.type !== deviceType
+		);
+		connectedDevicesForAnalytics.push(deviceInfo);
+
+		// Notify admin panels about device connection
+		io.to("admin-room").emit("device-connected", deviceInfo);
+
+		// Send current state to newly connected device
+		socket.emit("state-update", demoState);
+		socket.emit("force-connect-success", { deviceType });
 
 		// If this is an admin device, add to admin room
 		if (deviceType === "admin") {
@@ -311,6 +375,7 @@ io.on("connection", (socket) => {
 			socket.emit("errors-cleared");
 		}
 	});
+
 
 	// Handle disconnection
 	socket.on("disconnect", () => {
@@ -705,6 +770,177 @@ app.get("/admin-login", (req, res) => {
 		`;
 		
 		res.send(loginHtml);
+});
+
+// Connection error page for rejected devices
+app.get("/connection-error", (req, res) => {
+	const deviceType = req.query.device || "device";
+	const reason = req.query.reason || "Connection limit reached";
+	
+	const errorHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alliance Demo - Connection Error</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ffffff;
+        }
+        .error-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            width: 500px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .error-title {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+        .error-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        .error-message {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            font-size: 1.1rem;
+            color: #ff6b6b;
+        }
+        .instructions {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #00d4ff;
+        }
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 8px 0;
+            opacity: 0.9;
+        }
+        .retry-button {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 15px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+        .device-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="device-icon">
+            ${deviceType === "controller" ? "📱" : deviceType === "display" ? "🖥️" : "📟"}
+        </div>
+        <h1 class="error-title">Connection Blocked</h1>
+        <p class="error-subtitle">Maximum ${deviceType}s currently open</p>
+        
+        <div class="error-message">
+            <strong>Reason:</strong> ${reason}
+        </div>
+        
+        <div class="instructions">
+            <h3>What to do:</h3>
+            <ul>
+                <li><strong>Force Connect</strong> - Take over the existing connection (recommended for tradeshow)</li>
+                <li><strong>Close other ${deviceType} windows/tabs</strong> - Only one ${deviceType} can be connected at a time</li>
+                <li><strong>Wait and retry</strong> - The connection may become available shortly</li>
+            </ul>
+        </div>
+        
+        <button class="retry-button force-connect-btn" onclick="forceConnect('${deviceType}')">
+            Force Connect
+        </button>
+        
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            function forceConnect(deviceType) {
+                const button = document.querySelector('.force-connect-btn');
+                button.disabled = true;
+                button.textContent = 'Connecting...';
+                
+                // Connect to server and request force connection
+                const socket = io();
+                
+                socket.on('connect', () => {
+                    console.log('Connected, requesting force connect for:', deviceType);
+                    socket.emit('force-connect', deviceType);
+                });
+                
+                socket.on('force-connect-success', () => {
+                    console.log('Force connect successful, redirecting...');
+                    // Redirect back to React app (determine the client URL)
+                    const clientUrl = window.location.protocol + '//' + window.location.hostname + ':3000';
+                    window.location.href = clientUrl + '/' + deviceType;
+                });
+                
+                socket.on('connect_error', (error) => {
+                    console.error('Connection error:', error);
+                    button.disabled = false;
+                    button.textContent = '🔥 Force Connect';
+                    alert('Connection failed. Please try again.');
+                });
+                
+                // Timeout fallback
+                setTimeout(() => {
+                    if (button.disabled) {
+                        button.disabled = false;
+                        button.textContent = '🔥 Force Connect';
+                        alert('Connection timeout. Please try again.');
+                    }
+                }, 10000);
+            }
+        </script>
+    </div>
+</body>
+</html>
+	`;
+	
+	res.send(errorHtml);
 });
 
 // Catch-all handler: send back React's index.html file for client-side routing
