@@ -1,9 +1,16 @@
 # Alliance Demo - Tradeshow Setup Script
 # PowerShell version for Windows
+param(
+    [switch]$Offline
+)
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "    Alliance Demo - Tradeshow Setup" -ForegroundColor Cyan  
+if ($Offline) {
+    Write-Host "    Alliance Demo - Offline Setup" -ForegroundColor Cyan  
+} else {
+    Write-Host "    Alliance Demo - Online Setup" -ForegroundColor Cyan  
+}
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -15,18 +22,24 @@ if (-not (Test-Path "package.json")) {
 }
 
 try {
-    # Step 1: Git pull for latest changes
-    Write-Host "[1/6] Pulling latest changes from GitHub..." -ForegroundColor Yellow
-    $gitResult = git pull 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Successfully pulled latest changes" -ForegroundColor Green
-    } else {
-        Write-Host "WARNING: Git pull failed. Continuing with existing code..." -ForegroundColor Yellow
+    $stepCount = if ($Offline) { 4 } else { 6 }
+    $currentStep = 1
+
+    # Step 1: Git pull for latest changes (skip if offline)
+    if (-not $Offline) {
+        Write-Host "[$currentStep/$stepCount] Pulling latest changes from GitHub..." -ForegroundColor Yellow
+        $gitResult = git pull 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✓ Successfully pulled latest changes" -ForegroundColor Green
+        } else {
+            Write-Host "WARNING: Git pull failed. Continuing with existing code..." -ForegroundColor Yellow
+        }
+        Write-Host ""
+        $currentStep++
     }
-    Write-Host ""
 
     # Step 2: Get local IP address
-    Write-Host "[2/6] Detecting local IP address..." -ForegroundColor Yellow
+    Write-Host "[$currentStep/$stepCount] Detecting local IP address..." -ForegroundColor Yellow
     $networkAdapters = Get-NetIPAddress -AddressFamily IPv4 | Where-Object { 
         $_.IPAddress -ne "127.0.0.1" -and 
         $_.IPAddress -notlike "169.254.*" -and
@@ -43,9 +56,10 @@ try {
     
     Write-Host "✓ Detected IP address: $LOCAL_IP" -ForegroundColor Green
     Write-Host ""
+    $currentStep++
 
     # Step 3: Update server configuration
-    Write-Host "[3/6] Configuring server for IP: $LOCAL_IP..." -ForegroundColor Yellow
+    Write-Host "[$currentStep/$stepCount] Configuring server for IP: $LOCAL_IP..." -ForegroundColor Yellow
     
     # Create or update server .env file
     @"
@@ -64,34 +78,38 @@ BROWSER=none
 
     Write-Host "✓ Configuration files updated" -ForegroundColor Green
     Write-Host ""
+    $currentStep++
 
-    # Step 4: Install dependencies (if needed)
-    Write-Host "[4/6] Checking dependencies..." -ForegroundColor Yellow
-    
-    if (-not (Test-Path "node_modules")) {
-        Write-Host "Installing root dependencies..."
-        npm install
+    # Step 4: Install dependencies (skip if offline)
+    if (-not $Offline) {
+        Write-Host "[$currentStep/$stepCount] Checking dependencies..." -ForegroundColor Yellow
+        
+        if (-not (Test-Path "node_modules")) {
+            Write-Host "Installing root dependencies..."
+            npm install
+        }
+        
+        if (-not (Test-Path "client\node_modules")) {
+            Write-Host "Installing client dependencies..."
+            Push-Location client
+            npm install
+            Pop-Location
+        }
+        
+        if (-not (Test-Path "server\node_modules")) {
+            Write-Host "Installing server dependencies..."
+            Push-Location server
+            npm install
+            Pop-Location
+        }
+        
+        Write-Host "✓ Dependencies ready" -ForegroundColor Green
+        Write-Host ""
+        $currentStep++
     }
-    
-    if (-not (Test-Path "client\node_modules")) {
-        Write-Host "Installing client dependencies..."
-        Push-Location client
-        npm install
-        Pop-Location
-    }
-    
-    if (-not (Test-Path "server\node_modules")) {
-        Write-Host "Installing server dependencies..."
-        Push-Location server
-        npm install
-        Pop-Location
-    }
-    
-    Write-Host "✓ Dependencies ready" -ForegroundColor Green
-    Write-Host ""
 
     # Step 5: Start the application
-    Write-Host "[5/6] Starting Alliance Demo..." -ForegroundColor Yellow
+    Write-Host "[$currentStep/$stepCount] Starting Alliance Demo..." -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Starting server and client..."
     Write-Host "⏳ This may take a moment..."
@@ -102,9 +120,10 @@ BROWSER=none
 
     # Wait for servers to start
     Start-Sleep -Seconds 5
+    $currentStep++
 
     # Step 6: Open browser and display connection info
-    Write-Host "[6/6] Opening display and showing connection info..." -ForegroundColor Yellow
+    Write-Host "[$currentStep/$stepCount] Opening display and showing connection info..." -ForegroundColor Yellow
     Write-Host ""
 
     # Open Chrome to the display page
