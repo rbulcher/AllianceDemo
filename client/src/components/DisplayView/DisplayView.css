@@ -129,9 +129,9 @@ body.display-view-active {
 
 .video-container {
   position: relative;
-  width: 80vw;
-  max-width: 80vw;
-  height: calc(80vw * 9 / 16); /* Maintain 16:9 aspect ratio */
+  width: 75vw;
+  max-width: 75vw;
+  height: calc(75vw * 9 / 16); /* Maintain 16:9 aspect ratio */
   max-height: calc(100vh - 120px); /* Leave space for header, footer, and padding */
   background: #000;
   border-radius: clamp(12px, 2vw, 20px);
