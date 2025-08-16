@@ -17,6 +17,10 @@
 			content="black-translucent"
 		/>
 		<meta name="apple-mobile-web-app-title" content="Alliance Demo" />
+		<!-- Prevent iOS Safari navigation gestures -->
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="HandheldFriendly" content="true" />
 
 		<!-- Preload critical fonts to reduce loading delay -->
 		<link
@@ -146,6 +150,15 @@
 					if (event.touches.length > 1) {
 						event.preventDefault(); // Prevent pinch-to-zoom
 					}
+					
+					// Prevent back navigation gesture on controller route
+					if (window.location.pathname === '/controller') {
+						const touch = event.touches[0];
+						if (touch && touch.clientX < 50) {
+							event.preventDefault();
+							event.stopPropagation();
+						}
+					}
 				},
 				{ passive: false }
 			);
@@ -164,16 +177,56 @@
 				false
 			);
 
-			// Prevent pull-to-refresh on iOS
+			// Prevent pull-to-refresh on iOS and back navigation gestures
 			document.addEventListener(
 				"touchmove",
 				function (event) {
 					if (event.scale !== 1) {
 						event.preventDefault();
 					}
+					
+					// Additional prevention for controller route
+					if (window.location.pathname === '/controller') {
+						const touch = event.touches[0];
+						if (touch && touch.clientX < 80) {
+							event.preventDefault();
+							event.stopPropagation();
+						}
+					}
 				},
 				{ passive: false }
 			);
+
+			// Prevent browser back navigation for controller route
+			window.addEventListener('DOMContentLoaded', function() {
+				if (window.location.pathname === '/controller') {
+					// Add an entry to history to prevent back navigation
+					window.history.pushState(null, '', window.location.href);
+					
+					window.addEventListener('popstate', function(e) {
+						// Stay on the current page
+						window.history.pushState(null, '', window.location.href);
+					});
+				}
+			});
+
+			// Global prevention of browser navigation shortcuts
+			document.addEventListener('keydown', function(e) {
+				if (window.location.pathname === '/controller') {
+					// Prevent Alt+Left (back) and Alt+Right (forward)
+					if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+						e.preventDefault();
+						return false;
+					}
+					// Prevent Backspace navigation
+					if (e.key === 'Backspace' && 
+						!['INPUT', 'TEXTAREA'].includes(e.target.tagName) && 
+						!e.target.isContentEditable) {
+						e.preventDefault();
+						return false;
+					}
+				}
+			});
 		</script>
 	</body>
 </html>

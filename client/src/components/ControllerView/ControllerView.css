@@ -10,6 +10,40 @@
   margin: 0;
   position: relative;
   overflow: hidden;
+  /* Disable back navigation gestures and prevent page scrolling */
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+  /* Prevent pull-to-refresh and back navigation on mobile */
+  touch-action: pan-x pan-y;
+  /* Disable iOS Safari back gesture */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Force GPU acceleration for better touch handling */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  /* Prevent elastic scrolling */
+  -webkit-overflow-scrolling: auto;
+  /* Disable text selection that might interfere with touch */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Disable touch actions globally in controller view */
+.controller-view * {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+
+/* Specific overrides for interactive elements */
+.controller-view .continue-button,
+.controller-view .start-button,
+.controller-view .back-button,
+.controller-view .scenario-card {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 .controller-view.connecting,
@@ -829,50 +863,6 @@
   font-family: 'Montserrat', sans-serif;
   z-index: 1000;
   opacity: 0.4;
-}
-
-/* Hidden admin button */
-.admin-secret-button {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 60px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  z-index: 1000;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.admin-secret-button.feedback {
-  background: rgba(255, 255, 255, 0.1);
-  animation: adminFeedback 1s ease-out forwards;
-}
-
-.admin-secret-button:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.admin-secret-button:active {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateX(-50%) scale(0.95);
-}
-
-@keyframes adminFeedback {
-  0% {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateX(-50%) scale(1.1);
-  }
-  100% {
-    background: transparent;
-    transform: translateX(-50%) scale(1);
-  }
 }
 
 /* Mouse Coordinate Debug Display */

@@ -3,6 +3,27 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Prevent back navigation gestures globally */
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+}
+
+/* Global prevention of iOS back navigation */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Specific styles for controller route */
+body.controller-route {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-overscroll-behavior-x: none;
+  touch-action: pan-y;
 }
 
 /* Common component styles */

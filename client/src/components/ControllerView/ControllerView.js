@@ -23,8 +23,6 @@ const ControllerView = () => {
 
 	const [currentScenario, setCurrentScenario] = useState(null);
 	const [currentStep, setCurrentStep] = useState(null);
-	const [adminClickCount, setAdminClickCount] = useState(0);
-	const [showAdminFeedback, setShowAdminFeedback] = useState(false);
 	const [buttonFeedback, setButtonFeedback] = useState({});
 	const [showZones, setShowZones] = useState(true);
 	const [imageLoaded, setImageLoaded] = useState(false);
@@ -81,6 +79,94 @@ const ControllerView = () => {
 		if (newDeployment) {
 			console.log("🚀 New deployment detected, cache bust applied");
 		}
+	}, []);
+
+	// Prevent back navigation and swipe gestures on iPad/PWA
+	useEffect(() => {
+		const preventBackNavigation = (e) => {
+			// Prevent browser back navigation
+			e.preventDefault();
+			e.stopPropagation();
+			return false;
+		};
+
+		const preventTouchStart = (e) => {
+			// Check if touch is starting from the left edge (back swipe gesture)
+			const touch = e.touches[0];
+			if (touch && touch.clientX < 30) {
+				e.preventDefault();
+				e.stopPropagation();
+				return false;
+			}
+		};
+
+		const preventTouchMove = (e) => {
+			// Prevent any horizontal scrolling that could trigger back navigation
+			const touch = e.touches[0];
+			if (touch && touch.clientX < 50) {
+				e.preventDefault();
+				e.stopPropagation();
+				return false;
+			}
+		};
+
+		// Add history entry to prevent back navigation
+		const pushInitialState = () => {
+			window.history.pushState(null, '', window.location.href);
+		};
+
+		// Handle popstate events (back button, back gesture)
+		const handlePopState = (e) => {
+			// Immediately push state back to prevent actual navigation
+			window.history.pushState(null, '', window.location.href);
+			// Optionally show a message or take other action
+			console.log('Back navigation prevented in controller view');
+		};
+
+		// Set up back navigation prevention
+		pushInitialState();
+		window.addEventListener('popstate', handlePopState);
+		
+		// Set up touch gesture prevention for edge swipes
+		document.addEventListener('touchstart', preventTouchStart, { passive: false });
+		document.addEventListener('touchmove', preventTouchMove, { passive: false });
+		
+		// Prevent browser back navigation shortcuts
+		document.addEventListener('keydown', (e) => {
+			// Prevent Alt+Left Arrow (back navigation)
+			if (e.altKey && e.key === 'ArrowLeft') {
+				e.preventDefault();
+				return false;
+			}
+			// Prevent backspace navigation when not in input field
+			if (e.key === 'Backspace' && 
+				!['INPUT', 'TEXTAREA'].includes(e.target.tagName) && 
+				!e.target.isContentEditable) {
+				e.preventDefault();
+				return false;
+			}
+		});
+
+		// Apply CSS to body to prevent overscroll behavior
+		document.body.style.overscrollBehavior = 'none';
+		document.body.style.webkitOverscrollBehavior = 'none';
+		document.body.style.touchAction = 'pan-x pan-y';
+		
+		// Add controller route class to body for specific styling
+		document.body.classList.add('controller-route');
+
+		// Cleanup function
+		return () => {
+			window.removeEventListener('popstate', handlePopState);
+			document.removeEventListener('touchstart', preventTouchStart);
+			document.removeEventListener('touchmove', preventTouchMove);
+			// Reset body styles
+			document.body.style.overscrollBehavior = '';
+			document.body.style.webkitOverscrollBehavior = '';
+			document.body.style.touchAction = '';
+			// Remove controller route class
+			document.body.classList.remove('controller-route');
+		};
 	}, []);
 
 	// Use button positions and sizes directly from scenarios without scaling
@@ -368,8 +454,7 @@ const ControllerView = () => {
 				const step = scenario.steps[stepIndex];
 				if (step) {
 					setCurrentStep(step);
-					// Don't show zones immediately - wait for image to load
-					setShowZones(false);
+					// Zone display is managed by the zone display useEffect based on image load status
 					// Show mouse coordinates for image mapper steps (only if debug tool is enabled)
 					setShowMouseCoords(
 						(step.useImageMapper || false) && ENABLE_DEBUG_TOOL
@@ -498,8 +583,6 @@ const ControllerView = () => {
 			console.log("🔄 Demo reset detected - resetting controller state");
 			setCurrentScenario(null);
 			setCurrentStep(null);
-			setAdminClickCount(0);
-			setShowAdminFeedback(false);
 			setButtonFeedback({});
 			setShowZones(false);
 			setImageLoaded(false);
@@ -1026,8 +1109,6 @@ const ControllerView = () => {
 		// Reset local state to show scenario selector
 		setCurrentScenario(null);
 		setCurrentStep(null);
-		setAdminClickCount(0);
-		setShowAdminFeedback(false);
 	};
 
 	const handleBackToScenarios = async (scenarioCompleted = false) => {
@@ -1070,8 +1151,6 @@ const ControllerView = () => {
 		// Reset local state to show scenario selector
 		setCurrentScenario(null);
 		setCurrentStep(null);
-		setAdminClickCount(0);
-		setShowAdminFeedback(false);
 	};
 
 	const handleResetMenu = async () => {
@@ -1103,24 +1182,6 @@ const ControllerView = () => {
 		adminReset();
 		setCurrentScenario(null);
 		setCurrentStep(null);
-		setAdminClickCount(0);
-		setShowAdminFeedback(false);
-	};
-
-	const handleAdminClick = () => {
-		const newCount = adminClickCount + 1;
-		setAdminClickCount(newCount);
-
-		// Show temporary feedback
-		setShowAdminFeedback(true);
-		setTimeout(() => {
-			setShowAdminFeedback(false);
-		}, 1000);
-
-		if (newCount >= 5) {
-			// Navigate to admin panel
-			window.location.href = "/admin";
-		}
 	};
 
 	if (!isConnected) {
@@ -1177,15 +1238,6 @@ const ControllerView = () => {
 						);
 					})}
 				</div>
-
-				{/* Hidden admin button */}
-				<button
-					className={`admin-secret-button ${
-						showAdminFeedback ? "feedback" : ""
-					}`}
-					onClick={handleAdminClick}
-					aria-label="Admin access"
-				></button>
 			</div>
 		);
 	}
