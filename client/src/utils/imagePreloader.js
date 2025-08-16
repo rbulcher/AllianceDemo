@@ -100,6 +100,25 @@ class ImagePreloader {
 		await this.preloadImages(images);
 	}
 
+	// Preload all images for all scenarios plus background images
+	async preloadAllScenarios(scenarios) {
+		const allImages = new Set();
+
+		// Add background images used across the app
+		allImages.add('/assets/Background.png');
+		allImages.add('/assets/scenarioBackground.png');
+		allImages.add('/assets/Top_Bar.png');
+
+		// Add all scenario images
+		scenarios.forEach(scenario => {
+			const scenarioImages = this.getScenarioImages(scenario);
+			scenarioImages.forEach(img => allImages.add(img));
+		});
+
+		console.log(`🚀 Starting preload of ALL scenarios: ${allImages.size} total images...`);
+		await this.preloadImages(Array.from(allImages));
+	}
+
 	// Check if image is preloaded
 	isPreloaded(src) {
 		return this.preloadedImages.has(src);

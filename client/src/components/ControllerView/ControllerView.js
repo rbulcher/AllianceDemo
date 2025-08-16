@@ -426,22 +426,19 @@ const ControllerView = () => {
 				}, 500);
 			}
 
-			// Start preloading all scenario images immediately
+			// Start preloading individual scenario images only if all scenarios aren't already preloaded
 			if (scenario && !preloadComplete) {
-				console.log(`🎬 Starting preload for ${scenario.title}`);
+				console.log(`🎬 Individual scenario preload for ${scenario.title} (all scenarios not yet preloaded)`);
 				setIsPreloading(true);
-				setPreloadComplete(false);
 
 				imagePreloader
 					.preloadScenario(scenario)
 					.then(() => {
-						console.log(`✅ Preload complete for ${scenario.title}`);
-						setPreloadComplete(true);
+						console.log(`✅ Individual preload complete for ${scenario.title}`);
 						setIsPreloading(false);
 					})
 					.catch((error) => {
-						console.error(`❌ Preload failed for ${scenario.title}:`, error);
-						setPreloadComplete(true); // Continue anyway
+						console.error(`❌ Individual preload failed for ${scenario.title}:`, error);
 						setIsPreloading(false);
 					});
 			}
@@ -614,6 +611,29 @@ const ControllerView = () => {
 			videoHasStartedRef.current = false;
 		}
 	}, [demoState]);
+
+	// Separate useEffect to handle preloading when we're on scenario selector
+	useEffect(() => {
+		// Only preload when we're connected, have no current scenario (on selector), and haven't preloaded yet
+		if (isConnected && !demoState.currentScenario && !preloadComplete && !isPreloading) {
+			console.log(`🎬 Triggering ALL scenarios preload from scenario selector`);
+			setIsPreloading(true);
+
+			const allScenarios = getAllScenarios();
+			imagePreloader
+				.preloadAllScenarios(allScenarios)
+				.then(() => {
+					console.log(`✅ ALL scenarios preload complete`);
+					setPreloadComplete(true);
+					setIsPreloading(false);
+				})
+				.catch((error) => {
+					console.error(`❌ ALL scenarios preload failed:`, error);
+					setPreloadComplete(true); // Continue anyway
+					setIsPreloading(false);
+				});
+		}
+	}, [isConnected, demoState.currentScenario, preloadComplete, isPreloading]);
 
 	// Track when video starts playing (for manual and auto video start)
 	useEffect(() => {
@@ -1099,10 +1119,10 @@ const ControllerView = () => {
 		await audioFeedback.init();
 		audioFeedback.playTap();
 
-		// Clear preloader cache when going back to scenarios
-		imagePreloader.clear();
-		setIsPreloading(false);
-		setPreloadComplete(false);
+		// Keep preloaded images for optimal performance
+		// imagePreloader.clear(); - REMOVED
+		// setIsPreloading(false); - REMOVED 
+		// setPreloadComplete(false); - REMOVED
 
 		// Reset the demo state via socket (but don't affect completion states)
 		adminReset();
@@ -1116,10 +1136,10 @@ const ControllerView = () => {
 		await audioFeedback.init();
 		audioFeedback.playTap();
 
-		// Clear preloader cache when going back to scenarios
-		imagePreloader.clear();
-		setIsPreloading(false);
-		setPreloadComplete(false);
+		// Keep preloaded images for optimal performance
+		// imagePreloader.clear(); - REMOVED
+		// setIsPreloading(false); - REMOVED
+		// setPreloadComplete(false); - REMOVED
 
 		// Mark scenario as completed if it finished successfully
 		if (scenarioCompleted && currentScenario) {
@@ -1158,30 +1178,20 @@ const ControllerView = () => {
 		await audioFeedback.init();
 		audioFeedback.playTap();
 
-		console.log(
-			"🔄 Reset Menu: Performing FULL cache bust (including code)..."
-		);
+		console.log("🔄 Reset Menu: Clearing completed scenarios only...");
 
-		// Clear completed scenarios from localStorage before reload
+		// Clear completed scenarios from localStorage
 		try {
 			localStorage.removeItem("allianceDemo_completedScenarios");
-			console.log("Cleared completed scenarios from localStorage");
+			console.log("✅ Cleared completed scenarios from localStorage");
 		} catch (error) {
 			console.warn("Failed to clear localStorage:", error);
 		}
 
-		// Perform full cache bust - this will reload the page
-		await cacheBuster.fullCacheBust();
-
-		// Note: Code below won't execute because fullCacheBust() reloads the page
-		// But keeping it for safety in case reload fails
-		imagePreloader.clear();
+		// Reset completed scenarios state immediately (no page reload needed)
 		setCompletedScenarios(new Set());
-		setIsPreloading(false);
-		setPreloadComplete(false);
-		adminReset();
-		setCurrentScenario(null);
-		setCurrentStep(null);
+		
+		console.log("✅ Reset Menu complete - all scenarios now available");
 	};
 
 	if (!isConnected) {
@@ -1204,11 +1214,19 @@ const ControllerView = () => {
 				<div className="header" style={{ marginTop: "60px" }}>
 					<h1>Explore Insights to make your laundromat easier</h1>
 
+					{/* Preloading indicator */}
+					{isPreloading && (
+						<div className="preloading-indicator">
+							<div className="spinner"></div>
+							<span>Pre-loading all scenarios for optimal performance, please wait ...</span>
+						</div>
+					)}
+
 					{/* Reset Menu Button - Admin only */}
 					<button
 						className="reset-menu-button"
 						onClick={handleResetMenu}
-						title="Admin: Reset menu and clear all caches"
+						title="Admin: Reset completed scenarios (make all scenarios available again)"
 					>
 						Reset Menu
 					</button>
