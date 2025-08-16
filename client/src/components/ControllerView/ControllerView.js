@@ -240,41 +240,54 @@ const ControllerView = () => {
 
 	// Preload images when scenario starts
 	useEffect(() => {
-		console.log("🔍 ControllerView useEffect triggered with demoState:", demoState);
-		
+		console.log(
+			"🔍 ControllerView useEffect triggered with demoState:",
+			demoState
+		);
+
 		if (demoState.currentScenario) {
 			const scenario = getScenario(demoState.currentScenario);
 			setCurrentScenario(scenario);
-			
+
 			// Handle reconnection - reset all component state to ensure proper UI
-			console.log("🔍 Checking for reconnection flag:", demoState._isReconnection);
+			console.log(
+				"🔍 Checking for reconnection flag:",
+				demoState._isReconnection
+			);
 			if (demoState._isReconnection) {
 				console.log("🔄 Reconnection detected - resetting all component state");
-				
+
 				// Reset UI state but preserve video flow state
 				setImageLoaded(false);
 				setShowZones(false);
 				setButtonFeedback({});
 				setIsPreloading(false);
 				setPreloadComplete(false);
-				
+
 				// For video steps, preserve video state to avoid showing wrong buttons
 				const currentStepData = scenario?.steps[demoState.currentStep];
-				if (currentStepData?.videoAsset && currentStepData?.type === "controller-message") {
+				if (
+					currentStepData?.videoAsset &&
+					currentStepData?.type === "controller-message"
+				) {
 					console.log("🔄 RECONNECTION: Preserving video state for video step");
 					// Don't reset video-related state - preserve the flow
 					// setVideoManuallyStarted(false); ← REMOVED - this was breaking video flow
 					// videoHasStartedRef.current = false; ← REMOVED - this was breaking video flow
-					
+
 					// For video steps, show post-video button if video isn't playing
 					if (!demoState.isVideoPlaying) {
-						console.log("🔄 RECONNECTION: Video step + not playing = show post-video button");
+						console.log(
+							"🔄 RECONNECTION: Video step + not playing = show post-video button"
+						);
 						setShowPreVideoButton(false);
 						setShowPostVideoButton(true);
 						setShowNonVideoButton(false);
 						continueButtonTriggeredRef.current = true;
 					} else {
-						console.log("🔄 RECONNECTION: Video step + playing = reset buttons");
+						console.log(
+							"🔄 RECONNECTION: Video step + playing = reset buttons"
+						);
 						setShowPreVideoButton(false);
 						setShowPostVideoButton(false);
 						setShowNonVideoButton(false);
@@ -290,7 +303,7 @@ const ControllerView = () => {
 					continueButtonTriggeredRef.current = false;
 					videoHasStartedRef.current = false;
 				}
-				
+
 				// Reset scrollable report state
 				setScrollableReportState({
 					scrollPosition: 0,
@@ -299,23 +312,28 @@ const ControllerView = () => {
 					scrollProgress: 0,
 					isScrollComplete: false,
 				});
-				
+
 				// Reset scenario6 step14 state
 				setScenario6Step14State({
 					showSecondImage: false,
 					startAnimation: false,
 				});
-				
+
 				// Clear image preloader cache and restart
 				imagePreloader.clear();
-				
-				console.log("🔄 Component state reset complete - proceeding with normal step logic");
-				
+
+				console.log(
+					"🔄 Component state reset complete - proceeding with normal step logic"
+				);
+
 				// Force immediate zone display for interaction steps after reconnection
 				setTimeout(() => {
 					const step = scenario?.steps[demoState.currentStep];
 					if (step && step.useImageMapper) {
-						console.log("🔄 RECONNECTION FIX: Force enabling interaction zones for step:", step.id);
+						console.log(
+							"🔄 RECONNECTION FIX: Force enabling interaction zones for step:",
+							step.id
+						);
 						setImageLoaded(true);
 						setShowZones(true);
 					}
@@ -702,14 +720,20 @@ const ControllerView = () => {
 			console.log("❌ Not showing zones - step doesn't use image mapper");
 			setShowZones(false);
 		} else {
-			console.log("❌ Not showing zones - image not loaded or preload incomplete");
-			
+			console.log(
+				"❌ Not showing zones - image not loaded or preload incomplete"
+			);
+
 			// RECONNECTION BACKUP FIX: If step needs zones but image isn't marked as loaded,
 			// force it after a delay (this handles reconnection edge cases)
 			if (currentStep?.useImageMapper && !imageLoaded && !preloadComplete) {
-				console.log("🔧 BACKUP FIX: Attempting to force image loaded state in 2 seconds");
+				console.log(
+					"🔧 BACKUP FIX: Attempting to force image loaded state in 2 seconds"
+				);
 				setTimeout(() => {
-					console.log("🔧 BACKUP FIX: Force setting imageLoaded = true for reconnection");
+					console.log(
+						"🔧 BACKUP FIX: Force setting imageLoaded = true for reconnection"
+					);
 					setImageLoaded(true);
 				}, 2000);
 			}
@@ -2295,32 +2319,6 @@ const ControllerView = () => {
 					onClick={handleAdminBackToScenarios}
 					aria-label="Admin reset"
 				></button>
-
-				{/* Emergency zone restoration button (only show if zones should be visible but aren't) */}
-				{currentStep?.useImageMapper && !showZones && (
-					<button
-						onClick={() => {
-							console.log("🚨 EMERGENCY FIX: Force enabling zones");
-							setImageLoaded(true);
-							setShowZones(true);
-						}}
-						style={{
-							position: 'fixed',
-							bottom: '100px',
-							right: '20px',
-							background: '#ff6b6b',
-							color: 'white',
-							padding: '10px',
-							borderRadius: '5px',
-							border: 'none',
-							fontSize: '12px',
-							cursor: 'pointer',
-							zIndex: 1000,
-						}}
-					>
-						🚨 Fix Zones
-					</button>
-				)}
 			</div>
 		</div>
 	);
