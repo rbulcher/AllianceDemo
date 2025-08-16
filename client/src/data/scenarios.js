@@ -1419,7 +1419,7 @@ export const scenarios = {
 		id: "scenario5",
 		title: "Know and Control your Machines",
 		description: "Analyze performance data and optimize operations",
-		totalSteps: 13,
+		totalSteps: 16,
 		estimatedTime: "10-12 minutes",
 		steps: [
 			{
@@ -1711,28 +1711,28 @@ export const scenarios = {
 						indicatorType: "circle",
 					},
 				],
-				nextStep: "step16",
-			},
-			{
-				id: "step16",
-				type: "interaction",
-				title: "Drain Error Alert",
-				description: "Clear Errors for the washing machine",
-				screenAsset: "/assets/screenshots/scenario5/14.png",
-				useImageMapper: true,
-				interactions: [
-					{
-						id: "mobile-interaction-16",
-						type: "image-map",
-						label: "Continue",
-						position: { x: 196, y: 441 },
-						size: { width: 94, height: 62 },
-						action: "next-step",
-						indicatorType: "box",
-					},
-				],
 				nextStep: "step17",
 			},
+			// {
+			// 	id: "step16",
+			// 	type: "interaction",
+			// 	title: "Drain Error Alert",
+			// 	description: "Clear Errors for the washing machine",
+			// 	screenAsset: "/assets/screenshots/scenario5/14.png",
+			// 	useImageMapper: true,
+			// 	interactions: [
+			// 		{
+			// 			id: "mobile-interaction-16",
+			// 			type: "image-map",
+			// 			label: "Continue",
+			// 			position: { x: 196, y: 441 },
+			// 			size: { width: 94, height: 62 },
+			// 			action: "next-step",
+			// 			indicatorType: "box",
+			// 		},
+			// 	],
+			// 	nextStep: "step17",
+			// },
 			{
 				id: "step17",
 				type: "controller-message",
