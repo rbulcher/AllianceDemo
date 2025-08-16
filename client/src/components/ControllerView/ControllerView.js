@@ -347,8 +347,9 @@ const ControllerView = () => {
 				setImageLoaded(false);
 				setShowZones(false);
 				setButtonFeedback({});
-				setIsPreloading(false);
-				setPreloadComplete(false);
+				// Keep preloaded images for optimal performance during reconnection
+				// setIsPreloading(false); - REMOVED
+				// setPreloadComplete(false); - REMOVED
 
 				// For video steps, preserve video state to avoid showing wrong buttons
 				const currentStepData = scenario?.steps[demoState.currentStep];
@@ -405,8 +406,8 @@ const ControllerView = () => {
 					startAnimation: false,
 				});
 
-				// Clear image preloader cache and restart
-				imagePreloader.clear();
+				// Keep preloaded images for optimal performance during reconnection
+				// imagePreloader.clear(); - REMOVED
 
 				console.log(
 					"🔄 Component state reset complete - proceeding with normal step logic"
@@ -602,10 +603,10 @@ const ControllerView = () => {
 				showSecondImage: false,
 				startAnimation: false,
 			});
-			setIsPreloading(false);
-			setPreloadComplete(false);
-			// Clear image preloader cache
-			imagePreloader.clear();
+			// Keep preloaded images for optimal performance (consistent with handleBackToScenarios)
+			// setIsPreloading(false); - REMOVED
+			// setPreloadComplete(false); - REMOVED  
+			// imagePreloader.clear(); - REMOVED
 			// Reset refs
 			continueButtonTriggeredRef.current = false;
 			videoHasStartedRef.current = false;
