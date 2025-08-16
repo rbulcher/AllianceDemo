@@ -23,6 +23,7 @@ const DisplayView = () => {
 	const idleVideoRef = useRef(null);
 	const videoLoadingRef = useRef(false);
 	const currentVideoRef = useRef(null);
+	const timeUpdateHandlerRef = useRef(null);
 
 	// Hide scroll bars when display view is active
 	useEffect(() => {
@@ -45,9 +46,11 @@ const DisplayView = () => {
 				// Add event listeners to debug video loading
 				const handleLoadedData = () => {
 					console.log("Idle video loaded data successfully");
-					idleVideoRef.current.play().catch(error => {
-						console.warn("Idle video autoplay failed:", error);
-					});
+					if (idleVideoRef.current) {
+						idleVideoRef.current.play().catch(error => {
+							console.warn("Idle video autoplay failed:", error);
+						});
+					}
 				};
 				
 				const handleError = (e) => {
@@ -170,6 +173,11 @@ const DisplayView = () => {
 						currentVideoRef.current
 					);
 
+					// Clean up any existing timeupdate listener
+					if (timeUpdateHandlerRef.current && videoRef.current) {
+						videoRef.current.removeEventListener("timeupdate", timeUpdateHandlerRef.current);
+					}
+
 					// Add timeupdate listener to show endFrame before video ends
 					const handleTimeUpdate = () => {
 						if (videoRef.current && currentStep?.endFrameAsset) {
@@ -193,6 +201,8 @@ const DisplayView = () => {
 						}
 					};
 
+					// Store handler ref for cleanup and add listener
+					timeUpdateHandlerRef.current = handleTimeUpdate;
 					videoRef.current.addEventListener("timeupdate", handleTimeUpdate);
 
 					// Reset states
