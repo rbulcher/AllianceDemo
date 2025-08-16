@@ -24,6 +24,14 @@ const DisplayView = () => {
 	const videoLoadingRef = useRef(false);
 	const currentVideoRef = useRef(null);
 
+	// Hide scroll bars when display view is active
+	useEffect(() => {
+		document.body.classList.add('display-view-active');
+		return () => {
+			document.body.classList.remove('display-view-active');
+		};
+	}, []);
+
 	// Effect to handle idle video in connecting/standby states
 	useEffect(() => {
 		if ((!isConnected || !currentScenario) && idleVideoRef.current) {

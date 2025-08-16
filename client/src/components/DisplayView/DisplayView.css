@@ -1,10 +1,18 @@
 /* DisplayView.css */
+
+/* Hide scroll bars on display view and body when active */
 .display-view {
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
   color: white;
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* Hide scroll bars */
+}
+
+/* Hide scroll bars on body when display view is active */
+body.display-view-active {
+  overflow: hidden !important;
 }
 
 .display-view.connecting,
@@ -19,20 +27,21 @@
 
 .connection-message,
 .standby-screen {
-  max-width: 1400px;
+  max-width: 90vw;
   width: 100%;
-  padding: 4rem 2rem;
+  padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 3vw, 2rem);
   /* Optimize vertical spacing for TV aspect ratio */
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 70vh;
+  height: 70vh;
+  max-height: 70vh;
 }
 
 .connection-message h1,
 .alliance-logo h1 {
-  font-size: 5rem;
-  margin-bottom: 1.5rem;
+  font-size: clamp(3rem, 8vw, 5rem);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
   color: #e9511a;
   font-weight: 700;
   text-shadow: none;
@@ -41,21 +50,21 @@
 }
 
 .alliance-logo {
-  margin-bottom: 3rem;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
 }
 
 .alliance-logo p {
-  font-size: 2.5rem;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
   color: #4a4a4a;
   font-weight: 600;
   opacity: 1;
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
   letter-spacing: 0.5px;
 }
 
 .standby-message h2 {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
   color: #e9511a;
   font-weight: 700;
   text-shadow: none;
@@ -64,7 +73,7 @@
 }
 
 .standby-message p {
-  font-size: 2rem;
+  font-size: clamp(1.2rem, 3vw, 2rem);
   color: #4a4a4a;
   font-weight: 600;
   opacity: 1;
@@ -75,24 +84,25 @@
 
 .display-header {
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.829) 0%, transparent 100%);
-  padding: 2rem;
+  padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 60px;
 }
 
 .display-header h1 {
-  font-size: 2rem;
+  font-size: clamp(1.2rem, 3vw, 2rem);
   margin: 0;
 }
 
 .progress-bar {
   background: rgba(255, 255, 255, 0.2);
-  height: 8px;
-  border-radius: 4px;
-  width: 300px;
+  height: 6px;
+  border-radius: 3px;
+  width: clamp(200px, 30vw, 300px);
   overflow: hidden;
-  margin: 0 2rem;
+  margin: 0 1rem;
 }
 
 .progress-fill {
@@ -103,7 +113,7 @@
 }
 
 .step-info {
-  font-size: 1.1rem;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
   opacity: 0.9;
 }
 
@@ -113,18 +123,20 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: 1rem;
+  height: calc(100vh - 60px - 60px); /* Subtract header and footer heights */
 }
 
 .video-container {
   position: relative;
-  width: 100%;
-  max-width: 1400px;
-  aspect-ratio: 16/9;
+  width: 80vw;
+  max-width: 80vw;
+  height: calc(80vw * 9 / 16); /* Maintain 16:9 aspect ratio */
+  max-height: calc(100vh - 120px); /* Leave space for header, footer, and padding */
   background: #000;
-  border-radius: 15px;
+  border-radius: clamp(12px, 2vw, 20px);
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 clamp(15px, 3vw, 25px) clamp(30px, 6vw, 50px) rgba(0,0,0,0.6);
 }
 
 .demo-video {
@@ -135,12 +147,14 @@
 
 .idle-video-container {
   position: relative;
-  width: 85%; /* 10% space on both sides */
-  aspect-ratio: 16/9;
+  width: 80vw;
+  max-width: 80vw;
+  height: calc(80vw * 9 / 16); /* Maintain 16:9 aspect ratio */
+  max-height: calc(100vh - 120px); /* Leave space for any UI elements */
   background: #000;
-  border-radius: 20px; /* Slightly larger border radius */
+  border-radius: clamp(12px, 2vw, 20px);
   overflow: hidden;
-  box-shadow: 0 25px 50px rgba(0,0,0,0.6); /* Enhanced shadow for more presence */
+  box-shadow: 0 clamp(15px, 3vw, 25px) clamp(30px, 6vw, 50px) rgba(0,0,0,0.6);
 }
 
 .idle-video {
@@ -174,35 +188,36 @@
 .step-display {
   display: flex;
   width: 100%;
-  max-width: 1400px;
-  height: 80vh;
+  height: 100%;
   justify-content: center;
   align-items: center;
+  gap: 1rem;
 }
 
 .tv-content {
   text-align: center;
-  max-width: 1200px;
-  padding: 3rem;
+  max-width: 90vw;
+  padding: clamp(1rem, 3vw, 3rem);
   width: 100%;
 }
 
 .current-step-info {
-  margin-bottom: 3rem;
+  margin-bottom: clamp(1.5rem, 4vw, 3rem);
 }
 
 .current-step-info h2 {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
+  font-size: clamp(2rem, 6vw, 4rem);
+  margin-bottom: clamp(0.8rem, 2vw, 1.5rem);
   color: #e9511a;
   font-weight: 700;
   text-shadow: none;
-  white-space: nowrap;
+  white-space: normal;
   overflow: visible;
+  line-height: 1.1;
 }
 
 .current-step-info p {
-  font-size: 2.5rem;
+  font-size: clamp(1.2rem, 3vw, 2.5rem);
   color: #4a4a4a;
   font-weight: 600;
   opacity: 1;
@@ -218,7 +233,7 @@
 }
 
 .interaction-prompt p {
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 2vw, 1.2rem);
   opacity: 0.7;
   margin: 0;
 }
@@ -230,8 +245,8 @@
 }
 
 .pulse-circle {
-  width: 20px;
-  height: 20px;
+  width: clamp(15px, 3vw, 20px);
+  height: clamp(15px, 3vw, 20px);
   border-radius: 50%;
   background: #C84A1D;
   animation: pulse 2s infinite;
@@ -258,13 +273,13 @@
 }
 
 .completion-message h3 {
-  font-size: 2.5rem;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
   margin-bottom: 1rem;
   color: #2ecc71;
 }
 
 .completion-message p {
-  font-size: 1.3rem;
+  font-size: clamp(1rem, 2vw, 1.3rem);
   margin-bottom: 2rem;
   opacity: 0.9;
 }
@@ -289,7 +304,7 @@
 
 .stat-value {
   display: block;
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: bold;
   color: #3498db;
 }
